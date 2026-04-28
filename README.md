@@ -92,6 +92,8 @@ https://ppnatgw-inspect-frc-06311682.azurewebsites.net/inspect
 
 Use [docs/CUSTOM-CONNECTOR-PROOF.md](docs/CUSTOM-CONNECTOR-PROOF.md) and [connectors/nat-proof-connector.swagger.json](connectors/nat-proof-connector.swagger.json) for the custom connector proof path.
 
+Confirmed result: Power Platform custom connector run `powerplatform-test-009` exited through the North Europe NAT Gateway public IP `20.166.89.8`. See [docs/NAT-PROOF-RESULTS.md](docs/NAT-PROOF-RESULTS.md).
+
 See [docs/PROOF-GUIDE.md](docs/PROOF-GUIDE.md) for the step-by-step screenshot and evidence checklist.
 
 ## Important Notes

@@ -5,13 +5,15 @@ app.set('trust proxy', true);
 
 function requestSnapshot(req) {
   const forwardedFor = req.get('x-forwarded-for') || '';
-  const rawClientIp = forwardedFor.split(',')[0].trim() || req.ip || req.socket.remoteAddress || '';
+  const appServiceClientIp = req.get('client-ip') || '';
+  const rawClientIp = appServiceClientIp || forwardedFor.split(',')[0].trim() || req.ip || req.socket.remoteAddress || '';
   const clientIp = rawClientIp.replace(/^::ffff:/, '').replace(/:\d+$/, '');
 
   return {
     timestamp: new Date().toISOString(),
     observedClientIp: clientIp,
     rawObservedClientIp: rawClientIp,
+    appServiceClientIp,
     xForwardedFor: forwardedFor,
     xAzureClientIp: req.get('x-azure-clientip') || '',
     userAgent: req.get('user-agent') || '',

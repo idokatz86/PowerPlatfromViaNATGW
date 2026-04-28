@@ -47,7 +47,7 @@ Enterprise policy ARM ID:
 
 ## Current State
 
-Subnet injection is enabled for Power Platform environment `f021725d-8eeb-e31b-9427-7334c58a3a5b` at `https://orgdb8a7af5.crm4.dynamics.com/`. The remaining proof step is to run a VNet-supported workload and capture the destination-observed source IP.
+Subnet injection is enabled for Power Platform environment `f021725d-8eeb-e31b-9427-7334c58a3a5b` at `https://orgdb8a7af5.crm4.dynamics.com/`. A VNet-supported custom connector test has proven the North Europe NAT Gateway path. The West Europe paired-region NAT proof is still pending because the test runs executed from the North Europe runtime path.
 
 ## Proof Workload
 
@@ -90,8 +90,8 @@ When complete, add the observed values below:
 | North Europe NAT Gateway public IP | `20.166.89.8` |
 | Power Platform environment ID | `f021725d-8eeb-e31b-9427-7334c58a3a5b` |
 | Enterprise policy ARM ID | `/subscriptions/3cce1c0d-4798-48da-92cd-daaf643e932c/resourceGroups/rg-ppnatgw-demo/providers/Microsoft.PowerPlatform/enterprisePolicies/ppnatgw-europe-policy` |
-| Destination observed source IP | Pending |
-| Result | Pending |
+| Destination observed source IP | `20.166.89.8` for run `powerplatform-test-009` |
+| Result | North Europe NAT Gateway proof succeeded. West Europe proof pending. |
 
 ## Two NAT Gateway Proof Requirement
 
@@ -100,6 +100,6 @@ To prove both NAT Gateways, capture two separate successful Power Platform custo
 | Required proof row | Expected destination-observed source IP | Status |
 | --- | --- | --- |
 | West Europe delegated subnet egress | `51.124.38.135` | Pending |
-| North Europe delegated subnet egress | `20.166.89.8` | Pending |
+| North Europe delegated subnet egress | `20.166.89.8` | Proven by `powerplatform-test-009` |
 
 A single connector call only proves the regional Power Platform runtime path that handled that call. If the environment only executes from one region during normal operation, the second NAT Gateway proof requires a paired-region execution path, failover event, or support-guided validation. Do not mark both as proven until the destination endpoint actually observes both public IPs.
