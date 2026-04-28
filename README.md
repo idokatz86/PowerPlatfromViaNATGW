@@ -121,6 +121,34 @@ If the final AWS MCP call fails, use [tools/mcp-ingress-probe](tools/mcp-ingress
 
 ## Important Notes
 
-A normal Power Automate built-in HTTP action is not a reliable proof path. Microsoft documentation states that built-in HTTP actions can egress from Logic Apps or Power Automate service IP ranges. For this proof, use a VNet-supported custom connector or Dataverse plug-in path.
+The successful proof in this repository used a Power Platform custom connector, not the normal built-in Power Automate HTTP action.
+
+This distinction matters:
+
+| Workload path | Can this design force egress through the customer NAT Gateway? | Notes |
+| --- | --- | --- |
+| VNet-supported Power Platform custom connector | Yes | Proven by run `powerplatform-test-009`, where the destination observed `20.166.89.8`. |
+| Dataverse plug-in using the VNet-supported path | Yes, expected | Use the same destination-side proof pattern to validate. |
+| Built-in Power Automate HTTP action | No, not reliably | It can egress from Microsoft-managed Power Automate or Logic Apps infrastructure instead of the delegated subnet. |
+| Built-in Logic Apps action | No, not by this Power Platform VNet injection design | Logic Apps has its own networking patterns; this repo does not force Logic Apps egress through this NAT Gateway. |
+
+For the customer AWS MCP scenario, the recommended pattern is:
+
+```text
+Power App / Power Automate flow
+	-> VNet-supported custom connector
+	-> Power Platform delegated subnet
+	-> Azure NAT Gateway public IP
+	-> AWS-hosted MCP endpoint
+```
+
+The pattern to avoid for deterministic NAT egress is:
+
+```text
+Power Automate built-in HTTP action
+	-> AWS-hosted MCP endpoint
+```
+
+That path does not prove or guarantee egress from the Azure NAT Gateway public IP.
 
 These resources incur Azure cost while deployed, especially NAT Gateway and static public IP resources. Delete the resource group after the proof if you no longer need it.
