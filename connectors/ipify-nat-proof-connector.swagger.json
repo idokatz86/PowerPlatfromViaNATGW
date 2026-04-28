@@ -1,0 +1,44 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "IPify NAT Proof",
+    "description": "Calls api.ipify.org and returns the public source IP observed by ipify.",
+    "version": "1.0.0"
+  },
+  "host": "api.ipify.org",
+  "basePath": "/",
+  "schemes": ["https"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Get observed public IP",
+        "description": "Returns the public source IP observed by api.ipify.org for this Power Platform custom connector call.",
+        "operationId": "GetObservedPublicIp",
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "description": "Response format. Use json for proof evidence.",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": ["json"]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Observed public IP response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ip": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

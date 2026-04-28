@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-04-28T20:50:03Z",
+  "testName": "api-ipify-nat-proof",
+  "powerPlatformEnvironmentId": "f021725d-8eeb-e31b-9427-7334c58a3a5b",
+  "connector": {
+    "displayName": "IPify NAT Proof",
+    "connectorId": "4c909e76-4343-f111-88b5-7ced8d76efb6",
+    "internalName": "shared_new-5fipify-20nat-20proof-5ff792035ffdffcb5f",
+    "operationId": "GetObservedPublicIp",
+    "target": "https://api.ipify.org/?format=json"
+  },
+  "expectedNatGatewayPublicIps": [
+    "20.166.89.8",
+    "51.124.38.135"
+  ],
+  "response": {
+    "status": 200,
+    "body": {
+      "ip": "20.86.93.37"
+    },
+    "headers": {
+      "cf-ray": "9f38efe3d97fbe32-DUB",
+      "content-type": "application/json",
+      "date": "Tue, 28 Apr 2026 20:50:03 GMT",
+      "x-ms-environment-id": "f021725d-8eeb-e31b-9427-7334c58a3a5b",
+      "x-ms-islandgateway": "_prdil109neugb0_4",
+      "x-ms-igw-tracking-id": "a47de499-ab4f-4d6f-a285-6e084ac56c6f20260428205003_prdil109neugb0_4"
+    }
+  },
+  "classification": "not-valid-nat-proof",
+  "reason": "api.ipify.org returned 20.86.93.37, which is not one of the configured NAT Gateway public IPs for this demo. The connector call succeeded, but this result should be documented as not working or not guaranteed for deterministic NAT proof.",
+  "screenshot": "../screenshots/api-ipify-nat-proof-2026-04-28.png"
+}

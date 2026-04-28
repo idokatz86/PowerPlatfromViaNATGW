@@ -1,0 +1,10 @@
+{
+  "properties": {
+    "connectionParameters": {},
+    "iconBrandColor": "#0078D4",
+    "capabilities": [],
+    "scriptOperations": null,
+    "publisher": "PowerPlatfromViaNATGW",
+    "stackOwner": "PowerPlatfromViaNATGW"
+  }
+}

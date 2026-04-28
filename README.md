@@ -133,6 +133,7 @@ See [docs/PROOF-GUIDE.md](docs/PROOF-GUIDE.md) for the step-by-step screenshot a
 - [docs/AWS-MCP-INTEGRATION.md](docs/AWS-MCP-INTEGRATION.md) explains how to connect the final Power App/custom connector flow to an AWS-hosted MCP endpoint and what AWS must allow.
 - [docs/LIMITATIONS.md](docs/LIMITATIONS.md) states the customer-facing limitations and expectations.
 - [docs/SCENARIOS.md](docs/SCENARIOS.md) lists working scenarios versus not working or not guaranteed scenarios.
+- [docs/API-IPIFY-PROOF.md](docs/API-IPIFY-PROOF.md) shows how to interpret an `api.ipify.org` proof response. In the captured demo, `api.ipify.org` returned `20.86.93.37`, so it is documented as **not a valid NAT Gateway proof** for this run.
 
 ## AWS MCP Diagnostic Tool
 
