@@ -35,7 +35,19 @@ Microsoft maps the Power Platform Europe region to both `westeurope` and `northe
 
 For VNet-supported Power Platform workloads, the workload container is injected into the delegated subnet and receives an IP from that subnet. Azure NAT Gateway is associated directly to that delegated subnet, so internet-destined traffic from the injected workload uses the NAT Gateway as the outbound path and is source-translated to the NAT Gateway public IP.
 
-This only proves the VNet-injected execution path. A regular built-in Power Automate HTTP action can still egress from Logic Apps or Power Automate service IPs, so it must not be used as the final NAT proof.
+This only applies to traffic that actually executes inside the VNet-supported delegated subnet path. It does not automatically force every Power Platform or connector gateway path through the customer NAT Gateway. A regular built-in Power Automate HTTP action, Logic Apps action, or managed connector gateway path can still egress from Microsoft-managed service IPs, so those paths must not be used as deterministic NAT proof.
+
+If the customer requirement is **all AWS-bound traffic must be seen by AWS as a customer-controlled static IP**, use a customer-controlled Azure egress hop between Power Platform and AWS:
+
+```text
+Power App / Power Automate flow
+	-> VNet-supported custom connector
+	-> customer-controlled Azure proxy/API endpoint
+	-> proxy subnet with NAT Gateway or Azure Firewall
+	-> AWS-hosted MCP endpoint
+```
+
+That proxy can be Azure API Management in VNet mode, Azure Container Apps with VNet integration, Azure Functions Premium with VNet integration, App Service with VNet integration, AKS, or another customer-managed API gateway. In that model, AWS allowlists the public IP of the proxy egress path, not an opaque Power Platform connector gateway IP.
 
 ## Prerequisites
 
@@ -124,6 +136,15 @@ Use [docs/CUSTOM-CONNECTOR-PROOF.md](docs/CUSTOM-CONNECTOR-PROOF.md) and [connec
 
 Confirmed result: Power Platform custom connector run `powerplatform-test-009` exited through the North Europe NAT Gateway public IP `20.166.89.8`. See [docs/NAT-PROOF-RESULTS.md](docs/NAT-PROOF-RESULTS.md).
 
+Important follow-up tests against public IP echo services showed different behavior:
+
+| Public echo destination | Observed IP | Classification |
+| --- | --- | --- |
+| `api.ipify.org` | `20.86.93.37` | Not a valid NAT Gateway proof |
+| `checkip.amazonaws.com` | `20.86.93.37` | Not a valid NAT Gateway proof |
+
+Those results mean the public connector gateway path reached the internet, but those destinations did not see the configured NAT Gateway IPs. For AWS MCP, the customer must validate the final observed source IP from AWS-side logs before locking down source IP allowlists.
+
 See [docs/PROOF-GUIDE.md](docs/PROOF-GUIDE.md) for the step-by-step screenshot and evidence checklist.
 
 ## Architecture And Flow
@@ -157,7 +178,9 @@ This distinction matters:
 | Built-in Power Automate HTTP action | No, not reliably | It can egress from Microsoft-managed Power Automate or Logic Apps infrastructure instead of the delegated subnet. |
 | Built-in Logic Apps action | No, not by this Power Platform VNet injection design | Logic Apps has its own networking patterns; this repo does not force Logic Apps egress through this NAT Gateway. |
 
-For the customer AWS MCP scenario, the recommended pattern is:
+For the customer AWS MCP scenario, there are two patterns to understand.
+
+Direct connector-to-AWS pattern:
 
 ```text
 Power App / Power Automate flow
@@ -166,6 +189,20 @@ Power App / Power Automate flow
 	-> Azure NAT Gateway public IP
 	-> AWS-hosted MCP endpoint
 ```
+
+This is the original target pattern, but the public echo tests showed `20.86.93.37` instead of the NAT Gateway IPs. Do not treat this path as fully enforced for AWS until AWS-side logs prove the NAT Gateway IP is observed.
+
+Recommended deterministic AWS egress pattern:
+
+```text
+Power App / Power Automate flow
+	-> VNet-supported custom connector
+	-> customer-controlled Azure proxy/API
+	-> proxy subnet with NAT Gateway or Azure Firewall
+	-> AWS-hosted MCP endpoint
+```
+
+This pattern is enforceable because the AWS-facing request is made by a workload running in a customer-controlled Azure subnet. Attach NAT Gateway for stable SNAT, or use Azure Firewall when the customer needs egress logging, FQDN filtering, and policy control.
 
 The pattern to avoid for deterministic NAT egress is:
 
