@@ -39,13 +39,30 @@ This only proves the VNet-injected execution path. A regular built-in Power Auto
 
 ## Prerequisites
 
+### Power Platform Environment And Licensing
+
+- The Power Platform environment must be a **Managed Environment**. Power Platform virtual network support cannot be enabled on a non-managed environment.
+- The environment must be in a Power Platform geography that supports virtual network support. This demo uses Europe, which maps to Azure `westeurope` and `northeurope`.
+- The Azure subscription used for the VNets, delegated subnets, and enterprise policy must be associated with the same Power Platform tenant/geography requirements.
+- The environment needs Dataverse and must be eligible for custom connectors or Dataverse plug-ins, depending on the proof workload.
+- Users in the environment where virtual network support is enabled need licensing that includes the required Power Platform security/governance entitlement. Microsoft documents VNet support licensing under Power Platform security and governance licensing requirements. Examples include Microsoft 365 or Office 365 A5/E5/G5, Microsoft 365 A5/E5/F5/G5 Compliance, Microsoft 365 F5 Security & Compliance, Microsoft 365 E5/F5/G5 Information Protection and Governance, or Microsoft 365 E5/F5/G5 Insider Risk Management.
+- Managed Environments entitlement is included with licenses such as Power Apps Premium, Power Apps per app, Power Automate Premium, Power Automate Process, Power Automate Hosted Process, Power Automate per user/per flow, Microsoft Copilot Studio, Power Pages user licenses, and Dynamics 365 Premium/Enterprise/Team Members licenses. Confirm the exact customer entitlement with the customer's licensing team before production rollout.
+
+### Roles And Permissions
+
+- Azure permissions to create resource groups, VNets, subnets, subnet delegations, public IPs, NAT Gateways, VNet peerings, App Service resources, and Power Platform enterprise policy resources.
+- Azure Network Contributor or equivalent custom role is recommended for the networking deployment.
+- Power Platform administrator, Dynamics 365 administrator, or Global administrator role is required to create/bind the Power Platform enterprise policy and enable virtual network support.
+- Environment admin rights are required for the target environment and custom connector setup.
+- AWS permissions are required only if the customer will update AWS allowlists, WAF rules, API Gateway resource policies, security groups, or deploy the optional MCP ingress probe.
+
+### Local Tooling
+
 - Azure CLI authenticated to the target subscription.
-- GitHub CLI authenticated if you want to push the repository.
 - PowerShell 7 for the `Microsoft.PowerPlatform.EnterprisePolicies` module.
-- Power Platform CLI (`pac`) for environment creation.
-- Power Platform administrator role, Dynamics 365 administrator role, Global administrator role, or an existing eligible Europe environment created by a tenant admin.
-- Azure permissions to create resource groups, VNets, public IPs, NAT Gateways, and enterprise policies.
-- Capacity/license allowing a Managed Environment with Dataverse.
+- Power Platform CLI (`pac`) authenticated to the target tenant/environment.
+- `zip` and `jq` for packaging and validation scripts.
+- GitHub CLI authenticated only if you want to create or push the repository from the command line.
 
 ## Deployment Flow
 
