@@ -49,6 +49,19 @@ This only proves the VNet-injected execution path. A regular built-in Power Auto
 
 ## Deployment Flow
 
+For a customer-facing walkthrough, start with [docs/CUSTOMER-STEP-BY-STEP.md](docs/CUSTOMER-STEP-BY-STEP.md).
+
+To run the deployment as one guided automation, export the required values and run:
+
+```bash
+export SUBSCRIPTION_ID='<subscription-id>'
+export TENANT_ID='<tenant-id>'
+export POWER_PLATFORM_ENVIRONMENT_ID='<environment-id>'
+./scripts/09-run-customer-automation.sh
+```
+
+The individual steps are listed below for review and troubleshooting.
+
 ```bash
 ./scripts/00-prereqs.sh
 ./scripts/01-deploy-network.sh
@@ -95,6 +108,16 @@ Use [docs/CUSTOM-CONNECTOR-PROOF.md](docs/CUSTOM-CONNECTOR-PROOF.md) and [connec
 Confirmed result: Power Platform custom connector run `powerplatform-test-009` exited through the North Europe NAT Gateway public IP `20.166.89.8`. See [docs/NAT-PROOF-RESULTS.md](docs/NAT-PROOF-RESULTS.md).
 
 See [docs/PROOF-GUIDE.md](docs/PROOF-GUIDE.md) for the step-by-step screenshot and evidence checklist.
+
+## Architecture And Flow
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) describes the deployed Azure/Power Platform architecture.
+- [docs/APPLICATION-FLOW.md](docs/APPLICATION-FLOW.md) describes the runtime request flow and proof flow.
+- [docs/AWS-MCP-INTEGRATION.md](docs/AWS-MCP-INTEGRATION.md) explains how to connect the final Power App/custom connector flow to an AWS-hosted MCP endpoint and what AWS must allow.
+
+## AWS MCP Diagnostic Tool
+
+If the final AWS MCP call fails, use [tools/mcp-ingress-probe](tools/mcp-ingress-probe) as a temporary AWS-side diagnostic service. It returns the source IP and forwarding headers seen by the AWS ingress path, which helps separate Azure/Power Platform egress issues from AWS WAF, security group, API Gateway, ALB, or application allowlist issues.
 
 ## Important Notes
 
