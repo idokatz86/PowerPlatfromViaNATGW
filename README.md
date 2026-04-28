@@ -114,12 +114,15 @@ See [docs/PROOF-GUIDE.md](docs/PROOF-GUIDE.md) for the step-by-step screenshot a
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) describes the deployed Azure/Power Platform architecture.
 - [docs/APPLICATION-FLOW.md](docs/APPLICATION-FLOW.md) describes the runtime request flow and proof flow.
 - [docs/AWS-MCP-INTEGRATION.md](docs/AWS-MCP-INTEGRATION.md) explains how to connect the final Power App/custom connector flow to an AWS-hosted MCP endpoint and what AWS must allow.
+- [docs/LIMITATIONS.md](docs/LIMITATIONS.md) states the customer-facing limitations and expectations.
 
 ## AWS MCP Diagnostic Tool
 
 If the final AWS MCP call fails, use [tools/mcp-ingress-probe](tools/mcp-ingress-probe) as a temporary AWS-side diagnostic service. It returns the source IP and forwarding headers seen by the AWS ingress path, which helps separate Azure/Power Platform egress issues from AWS WAF, security group, API Gateway, ALB, or application allowlist issues.
 
 ## Important Notes
+
+Read [docs/LIMITATIONS.md](docs/LIMITATIONS.md) before using this design with a customer. The short version is below.
 
 The successful proof in this repository used a Power Platform custom connector, not the normal built-in Power Automate HTTP action.
 

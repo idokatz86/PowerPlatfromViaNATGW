@@ -10,6 +10,8 @@ Power App / Power Automate
   -> AWS-hosted MCP endpoint
 ```
 
+Read [LIMITATIONS.md](LIMITATIONS.md) before using this design with an AWS-hosted MCP endpoint. This design provides deterministic public egress for the VNet-supported custom connector path; it does not provide private AWS connectivity or force built-in Power Automate HTTP actions through the NAT Gateway.
+
 ## What AWS Must Allow
 
 For a public AWS MCP endpoint, AWS must allow inbound HTTPS from the Azure NAT Gateway public IPs.

@@ -8,6 +8,8 @@ Power Platform traffic from a VNet-supported workload should reach an external s
 
 The proof is valid only when the destination service observes the NAT Gateway public IP in the inbound request.
 
+Before starting, read [LIMITATIONS.md](LIMITATIONS.md). The most important limitation is that this design proves the VNet-supported custom connector path. It does not force the normal built-in Power Automate HTTP action or built-in Logic Apps actions through this NAT Gateway.
+
 ## Required Access
 
 | Area | Required access |
@@ -156,6 +158,7 @@ See [NAT-PROOF-RESULTS.md](NAT-PROOF-RESULTS.md).
 
 ## Important Limitations
 
+- Full limitation details are documented in [LIMITATIONS.md](LIMITATIONS.md).
 - A single custom connector call proves only the Power Platform regional runtime path that handled that call.
 - The current demo proved North Europe. West Europe is configured but has not yet been observed by the destination endpoint.
 - Built-in Power Automate HTTP actions are not a clean proof path because they can egress from shared Power Automate/Logic Apps infrastructure.

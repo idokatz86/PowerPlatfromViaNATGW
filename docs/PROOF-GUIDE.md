@@ -2,6 +2,8 @@
 
 This guide records the exact screenshots and evidence needed to prove that a Power Platform environment in the Europe geography exits the internet through the Azure NAT Gateway public IP attached to the delegated subnet.
 
+For customer-facing scope boundaries, read [LIMITATIONS.md](LIMITATIONS.md). The proof is scoped to VNet-supported Power Platform workload paths, such as the custom connector path used in this repo.
+
 ## Evidence Checklist
 
 Capture each screenshot into `docs/images/` using the suggested file names.
