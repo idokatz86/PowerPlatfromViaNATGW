@@ -1,0 +1,46 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Power Platform NAT Proof Inspector",
+    "description": "Calls the external inspection endpoint and returns the source IP observed by the destination.",
+    "version": "1.0.0"
+  },
+  "host": "ppnatgw-inspect-frc-06311682.azurewebsites.net",
+  "basePath": "/",
+  "schemes": ["https"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "paths": {
+    "/inspect": {
+      "get": {
+        "summary": "Inspect observed source IP",
+        "description": "Returns the client/source IP observed by the France Central inspection Web App.",
+        "operationId": "InspectSourceIp",
+        "parameters": [
+          {
+            "name": "run",
+            "in": "query",
+            "description": "Correlation ID for this proof run, for example weu-001 or neu-001.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Observed source IP response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "timestamp": { "type": "string" },
+                "observedClientIp": { "type": "string" },
+                "rawObservedClientIp": { "type": "string" },
+                "xForwardedFor": { "type": "string" },
+                "path": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

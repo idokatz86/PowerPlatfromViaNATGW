@@ -1,6 +1,6 @@
 # PowerPlatfromViaNATGW Deployment Plan
 
-Status: Approved for scaffold; pending approval for paid Azure resource creation
+Status: Azure network, enterprise policy, and Power Platform subnet injection deployed in the M365x06311682 tenant
 
 ## Goal
 Create a public GitHub repository and an end-to-end proof that a Power Platform environment using virtual network support exits the internet through an Azure NAT Gateway public IP attached to the delegated subnet.
@@ -16,9 +16,16 @@ The intended enforcement mechanism is subnet-level NAT Gateway association. For 
 
 ## Current Assumptions
 - Public repository is acceptable.
-- The existing signed-in Microsoft/Azure account should be used.
-- The subscription and region must be confirmed before resource creation.
+- The active implementation uses tenant `0bf51094-2478-4975-9cbc-61fb8c649e62` and subscription `3cce1c0d-4798-48da-92cd-daaf643e932c`.
+- Power Platform environment `f021725d-8eeb-e31b-9427-7334c58a3a5b` is an existing Sandbox environment in Europe.
 - Power Platform tenant permissions and licenses must support Managed Environments and virtual network support.
+
+## Current State
+- GitHub repository created and scaffold pushed.
+- Azure resource group, paired regional VNets, delegated subnets, NAT Gateways, and static public IPs deployed in subscription `3cce1c0d-4798-48da-92cd-daaf643e932c`.
+- Power Platform enterprise policy `ppnatgw-europe-policy` created in location `europe`.
+- Existing Power Platform Sandbox environment `f021725d-8eeb-e31b-9427-7334c58a3a5b` at `https://orgdb8a7af5.crm4.dynamics.com/` is visible to PAC.
+- Subnet injection was enabled successfully for environment `f021725d-8eeb-e31b-9427-7334c58a3a5b`.
 
 ## Architecture
 - Power Platform geography: Europe.
@@ -34,10 +41,11 @@ The intended enforcement mechanism is subnet-level NAT Gateway association. For 
 2. Confirm Azure subscription and preferred region.
 3. Verify required CLIs/modules and Power Platform permissions.
 4. Create Azure VNet, delegated subnet, NAT Gateway, and Public IP.
-5. Configure Power Platform virtual network support for the environment.
-6. Deploy or configure a demo app/flow to call an external echo endpoint.
-7. Validate outbound source IP equals NAT Gateway public IP.
-8. Capture screenshots and write end-to-end guide.
+5. Use the existing eligible Europe Sandbox environment.
+6. Configure Power Platform virtual network support for the environment.
+7. Deploy or configure a demo workload to call an external request-inspection endpoint.
+8. Validate outbound source IP equals NAT Gateway public IP.
+9. Capture screenshots and write end-to-end guide.
 
 ## Validation Plan
 - Azure deployment validation/what-if before changes where applicable.
@@ -48,9 +56,20 @@ The intended enforcement mechanism is subnet-level NAT Gateway association. For 
 
 ## Risks / Blockers
 - Power Platform VNet support may require specific tenant capabilities, regions, environment types, and admin privileges.
-- Power Platform environment creation/configuration is not fully covered by Azure Resource Manager and requires Power Platform Admin PowerShell and/or PAC CLI. Local machine currently has Azure CLI and GitHub CLI, but not PowerShell, PAC CLI, or dotnet.
+- Power Platform environment creation/configuration is not fully covered by Azure Resource Manager and requires Power Platform Admin PowerShell and/or PAC CLI.
 - Built-in Power Automate HTTP actions are not a reliable NAT proof because Microsoft documentation says those actions can egress via Logic Apps or Power Automate service IPs.
 - Proof may require a reachable external endpoint that records inbound source IP.
 
 ## Section 7: Validation Proof
-Pending.
+
+- Azure CLI authenticated as `ido@M365x06311682.onmicrosoft.com`.
+- Subscription: `3cce1c0d-4798-48da-92cd-daaf643e932c`.
+- Tenant: `0bf51094-2478-4975-9cbc-61fb8c649e62`.
+- Resource group: `rg-ppnatgw-demo`.
+- West Europe NAT public IP: `51.124.38.135`.
+- North Europe NAT public IP: `20.166.89.8`.
+- Enterprise policy ARM ID: `/subscriptions/3cce1c0d-4798-48da-92cd-daaf643e932c/resourceGroups/rg-ppnatgw-demo/providers/Microsoft.PowerPlatform/enterprisePolicies/ppnatgw-europe-policy`.
+- Power Platform environment ID: `f021725d-8eeb-e31b-9427-7334c58a3a5b`.
+- Environment URL: `https://orgdb8a7af5.crm4.dynamics.com/`.
+- `Enable-SubnetInjection` completed successfully for the environment.
+- Destination-observed source IP proof is pending.

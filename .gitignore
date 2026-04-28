@@ -2,4 +2,5 @@
 !.azure/deployment-plan.md
 .azure/*.log
 .azure/*.txt
+.azure/*.zip
 .DS_Store

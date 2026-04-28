@@ -13,7 +13,25 @@ if ! command -v pac >/dev/null 2>&1; then
   exit 1
 fi
 
-pac auth create --name PowerPlatformViaNATGW
+mkdir -p .azure
+
+cat <<'EOF'
+This script creates the Power Platform environment with PAC CLI.
+
+Known tenant/admin requirements:
+- The signed-in user must be allowed to create Power Platform environments.
+- In many enterprise tenants, this requires Power Platform Administrator,
+  Dynamics 365 Administrator, or Global Administrator.
+- Microsoft corporate accounts may need PAC device-code auth or WAM-based auth.
+
+If the tenant says non-admin users cannot create environments, stop here and ask
+a tenant admin to create the environment using docs/ADMIN-HANDOFF.md.
+EOF
+
+if ! pac auth list | grep -q '^\*\|PowerPlatformViaNATGW'; then
+  echo "No PAC auth profile found. Starting device-code login. Complete it promptly before the code expires."
+  pac auth create --name PowerPlatformViaNATGW --deviceCode
+fi
 
 pac admin create \
   --name "$ENV_NAME" \

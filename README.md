@@ -6,8 +6,10 @@ End-to-end deployment assets for proving that a Power Platform environment using
 
 ## Target
 
-- Azure subscription: `152f2bd5-8f6b-48ba-a702-21a23172a224`
-- Azure tenant from local CLI: `16b3c013-d300-468d-ac64-7eda0820b6d3`
+- Azure subscription: `3cce1c0d-4798-48da-92cd-daaf643e932c`
+- Azure tenant: `0bf51094-2478-4975-9cbc-61fb8c649e62`
+- Power Platform environment ID: `f021725d-8eeb-e31b-9427-7334c58a3a5b`
+- Power Platform environment URL: `https://orgdb8a7af5.crm4.dynamics.com/`
 - Power Platform geography: Europe
 - Required Azure regions for Europe: `westeurope`, `northeurope`
 - Enterprise policy location: `europe`
@@ -41,7 +43,7 @@ This only proves the VNet-injected execution path. A regular built-in Power Auto
 - GitHub CLI authenticated if you want to push the repository.
 - PowerShell 7 for the `Microsoft.PowerPlatform.EnterprisePolicies` module.
 - Power Platform CLI (`pac`) for environment creation.
-- Power Platform administrator role.
+- Power Platform administrator role, Dynamics 365 administrator role, Global administrator role, or an existing eligible Europe environment created by a tenant admin.
 - Azure permissions to create resource groups, VNets, public IPs, NAT Gateways, and enterprise policies.
 - Capacity/license allowing a Managed Environment with Dataverse.
 
@@ -64,10 +66,12 @@ Create a Power Platform environment if one does not already exist:
 ./scripts/03-create-power-platform-environment.sh
 ```
 
+This deployment now uses an existing Sandbox environment in the same tenant. If you need to recreate the environment later, use the values in [docs/ADMIN-HANDOFF.md](docs/ADMIN-HANDOFF.md).
+
 Enable virtual network support for the environment:
 
 ```powershell
-./scripts/04-enable-subnet-injection.ps1 -EnvironmentId '<environment-guid>'
+./scripts/04-enable-subnet-injection.ps1 -EnvironmentId 'f021725d-8eeb-e31b-9427-7334c58a3a5b'
 ```
 
 Validate Azure networking:
@@ -79,6 +83,14 @@ Validate Azure networking:
 ## Proof
 
 Use a VNet-supported Power Platform custom connector or Dataverse plug-in to call a request-inspection endpoint. The destination must observe the same source IP as the NAT Gateway public IP for the regional subnet used by the workload.
+
+The active inspection endpoint is deployed as an Azure Web App outside the Power Platform network resource group and outside West Europe/North Europe:
+
+```text
+https://ppnatgw-inspect-frc-06311682.azurewebsites.net/inspect
+```
+
+Use [docs/CUSTOM-CONNECTOR-PROOF.md](docs/CUSTOM-CONNECTOR-PROOF.md) and [connectors/nat-proof-connector.swagger.json](connectors/nat-proof-connector.swagger.json) for the custom connector proof path.
 
 See [docs/PROOF-GUIDE.md](docs/PROOF-GUIDE.md) for the step-by-step screenshot and evidence checklist.
 
