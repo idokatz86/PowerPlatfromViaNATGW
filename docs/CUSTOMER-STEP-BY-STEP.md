@@ -189,6 +189,8 @@ Create the regional Power Platform custom connectors from:
 
 Then build a flow that calls only `NEU NAT Proxy` or `WEU NAT Proxy`. See [POWER-AUTOMATE-PROXY-EXAMPLE.md](POWER-AUTOMATE-PROXY-EXAMPLE.md).
 
+For the validated end-to-end Power Automate test results, including custom connector, built-in HTTP direct, and built-in HTTP via proxy outcomes, see [POWER-AUTOMATE-E2E-RESULTS.md](POWER-AUTOMATE-E2E-RESULTS.md).
+
 Deploy the Logic App example:
 
 ```bash

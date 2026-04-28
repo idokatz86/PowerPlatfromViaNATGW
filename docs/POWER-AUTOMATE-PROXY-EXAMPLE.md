@@ -2,6 +2,8 @@
 
 This example shows how to make a Power Automate flow use only the customer-controlled regional proxy endpoints for the outbound proof call.
 
+The current end-to-end capture is in [POWER-AUTOMATE-E2E-RESULTS.md](POWER-AUTOMATE-E2E-RESULTS.md). It proves that the regional custom connectors work, that direct built-in HTTP does not use the customer NAT Gateway, and that built-in HTTP can be acceptable only when it calls the approved regional proxy endpoints.
+
 ## Created Custom Connectors
 
 | Region | Display name | Connector ID | Internal name | Proxy host |
@@ -40,6 +42,8 @@ Manual trigger
 ```
 
 The flow must not call `api.ipify.org`, `checkip.amazonaws.com`, or the AWS MCP endpoint directly. It calls the regional proxy connector only.
+
+If the customer chooses to use the built-in HTTP action instead of the custom connector, restrict the URI to the approved proxy hostnames only. The built-in action direct to `checkip.amazonaws.com` succeeded in the demo but returned `98.71.111.250`, so it is a functional path but not an enforced NAT path.
 
 ## Enforcement Controls
 

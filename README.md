@@ -201,6 +201,7 @@ See [docs/PROOF-GUIDE.md](docs/PROOF-GUIDE.md) for the step-by-step screenshot a
 - [docs/AWS-CHECKIP-PROOF.md](docs/AWS-CHECKIP-PROOF.md) records the AWS-hosted `checkip.amazonaws.com` test. It also returned `20.86.93.37`, so AWS-side allowlisting must be validated with destination logs before assuming the NAT Gateway IPs are observed.
 - [docs/CONTAINER-APPS-PROXY-PROOF.md](docs/CONTAINER-APPS-PROXY-PROOF.md) records the two-region customer-controlled proxy proof.
 - [docs/POWER-AUTOMATE-PROXY-EXAMPLE.md](docs/POWER-AUTOMATE-PROXY-EXAMPLE.md) describes the regional Power Automate proxy connector example.
+- [docs/POWER-AUTOMATE-E2E-RESULTS.md](docs/POWER-AUTOMATE-E2E-RESULTS.md) records the end-to-end Power Automate tests for custom connectors, built-in HTTP direct calls, and built-in HTTP calls through the regional proxies.
 - [docs/LOGIC-APP-PROXY-EXAMPLE.md](docs/LOGIC-APP-PROXY-EXAMPLE.md) describes the deployed Logic App regional proxy examples.
 - [docs/REGIONAL-PROXY-ENFORCEMENT.md](docs/REGIONAL-PROXY-ENFORCEMENT.md) explains how to enforce the proxy architecture and what remains out of scope.
 
@@ -221,7 +222,8 @@ This distinction matters:
 | --- | --- | --- |
 | VNet-supported Power Platform custom connector | Yes | Proven by run `powerplatform-test-009`, where the destination observed `20.166.89.8`. |
 | Dataverse plug-in using the VNet-supported path | Yes, expected | Use the same destination-side proof pattern to validate. |
-| Built-in Power Automate HTTP action | No, not reliably | It can egress from Microsoft-managed Power Automate or Logic Apps infrastructure instead of the delegated subnet. |
+| Built-in Power Automate HTTP action direct to AWS/public destination | No | End-to-end test succeeded functionally, but AWS observed `98.71.111.250`, not either NAT Gateway IP. |
+| Built-in Power Automate HTTP action to approved regional proxy | Yes for the AWS-facing leg | The HTTP action reaches the proxy; the proxy reaches AWS through NAT Gateway. |
 | Built-in Logic Apps action | No, not by this Power Platform VNet injection design | Logic Apps has its own networking patterns; this repo does not force Logic Apps egress through this NAT Gateway. |
 
 For the customer AWS MCP scenario, there are two patterns to understand.

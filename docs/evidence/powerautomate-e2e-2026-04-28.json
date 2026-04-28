@@ -1,0 +1,97 @@
+{
+  "capturedAtUtc": "2026-04-28T22:00:38Z",
+  "environment": {
+    "environmentId": "f021725d-8eeb-e31b-9427-7334c58a3a5b",
+    "environmentName": "Fnx-mng",
+    "tenantId": "0bf51094-2478-4975-9cbc-61fb8c649e62"
+  },
+  "expectedNatIps": {
+    "northEurope": "20.166.89.8",
+    "westEurope": "51.124.38.135"
+  },
+  "customConnectorTests": [
+    {
+      "displayName": "NEU NAT Proxy",
+      "connectorId": "738e979f-4a43-f111-88b5-7ced8d76efb6",
+      "internalName": "new_neu-20nat-20proxy",
+      "connectionId": "71596f05-4035-4617-ba7f-0f70011e7eb8",
+      "operation": "GetAllProxyProofs",
+      "powerAutomateStatus": 200,
+      "schemaValidation": "Succeeded",
+      "timestampUtc": "2026-04-28T21:55:40.968Z",
+      "containerAppRevision": "ppnatgw-proxy--i5at7yk",
+      "ipify": {
+        "target": "https://api.ipify.org/?format=json",
+        "observedIp": "20.166.89.8",
+        "natProof": true
+      },
+      "awsCheckIp": {
+        "target": "https://checkip.amazonaws.com/",
+        "observedIp": "20.166.89.8",
+        "natProof": true
+      },
+      "conclusion": "Custom connector calls the North Europe regional proxy. The AWS-facing and ipify-facing calls leave through the North Europe NAT Gateway."
+    },
+    {
+      "displayName": "WEU NAT Proxy",
+      "connectorId": "411718a6-4a43-f111-88b5-7ced8d76efb6",
+      "internalName": "new_weu-20nat-20proxy",
+      "connectionId": "be7461d4-eedc-4ad0-8002-95b127e98181",
+      "operation": "GetAllProxyProofs",
+      "powerAutomateStatus": 200,
+      "schemaValidation": "Succeeded",
+      "timestampUtc": "2026-04-28T21:56:18.559Z",
+      "containerAppRevision": "ppnatgw-proxy-weu--vpyhkc1",
+      "ipify": {
+        "target": "https://api.ipify.org/?format=json",
+        "observedIp": "51.124.38.135",
+        "natProof": true
+      },
+      "awsCheckIp": {
+        "target": "https://checkip.amazonaws.com/",
+        "observedIp": "51.124.38.135",
+        "natProof": true
+      },
+      "conclusion": "Custom connector calls the West Europe regional proxy. The AWS-facing and ipify-facing calls leave through the West Europe NAT Gateway."
+    }
+  ],
+  "builtInHttpTests": [
+    {
+      "displayName": "NAT proof - built-in HTTP direct with response",
+      "flowId": "473b5fd9-8734-2d30-6fb0-cf62446a1854",
+      "runId": "08584241932808737098176761315CU18",
+      "runStatus": "Succeeded",
+      "startTimeUtc": "2026-04-28T22:00:04.6051642Z",
+      "endTimeUtc": "2026-04-28T22:00:05.3365055Z",
+      "action": "Built-in HTTP GET directly to https://checkip.amazonaws.com/",
+      "observedIp": "98.71.111.250",
+      "natProof": false,
+      "conclusion": "The built-in Power Automate HTTP action works functionally, but direct calls to AWS checkip do not leave through either customer NAT Gateway. This path is not valid for NAT enforcement proof."
+    },
+    {
+      "displayName": "NAT proof - built-in HTTP via regional proxies",
+      "flowId": "71133f5f-428c-7e60-8b69-0161d3c08e48",
+      "runId": "08584241932478654131676297210CU02",
+      "runStatus": "Succeeded",
+      "startTimeUtc": "2026-04-28T22:00:37.613579Z",
+      "endTimeUtc": "2026-04-28T22:00:38.333268Z",
+      "action": "Built-in HTTP GET to both regional Container Apps proxy /proxy/all endpoints",
+      "northEuropeProxy": {
+        "proxyUrl": "https://ppnatgw-proxy.yellowmeadow-5cf2ecd6.northeurope.azurecontainerapps.io/proxy/all",
+        "ipifyObservedIp": "20.166.89.8",
+        "ipifyNatProof": true,
+        "awsObservedIp": "20.166.89.8",
+        "awsNatProof": true
+      },
+      "westEuropeProxy": {
+        "proxyUrl": "https://ppnatgw-proxy-weu.orangesea-6ab30ac0.westeurope.azurecontainerapps.io/proxy/all",
+        "ipifyObservedIp": "51.124.38.135",
+        "ipifyNatProof": true,
+        "awsObservedIp": "51.124.38.135",
+        "awsNatProof": true
+      },
+      "conclusion": "The built-in Power Automate HTTP action can be used safely only when it calls the approved regional proxy endpoints. The customer-controlled proxy then owns the AWS-facing egress through NAT Gateway."
+    }
+  ],
+  "overallConclusion": "Power Automate is working end to end when the flow uses the approved regional proxy custom connectors or when the built-in HTTP action calls the approved regional proxy endpoints. Power Automate built-in HTTP direct-to-AWS is functional but bypasses the customer NAT Gateway and must not be treated as an enforced egress path."
+}
