@@ -1,0 +1,30 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "AWS CheckIP Proof",
+    "description": "Calls checkip.amazonaws.com and returns the public source IP observed by AWS.",
+    "version": "1.0.0"
+  },
+  "host": "checkip.amazonaws.com",
+  "basePath": "/",
+  "schemes": ["https"],
+  "consumes": ["application/json"],
+  "produces": ["text/plain"],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Get AWS-observed public IP",
+        "description": "Returns the public source IP observed by AWS checkip for this Power Platform custom connector call.",
+        "operationId": "GetAwsObservedPublicIp",
+        "responses": {
+          "200": {
+            "description": "Observed public IP response",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

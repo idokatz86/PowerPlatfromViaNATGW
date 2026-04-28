@@ -1,0 +1,10 @@
+{
+  "properties": {
+    "connectionParameters": {},
+    "iconBrandColor": "#FF9900",
+    "capabilities": [],
+    "scriptOperations": null,
+    "publisher": "PowerPlatfromViaNATGW",
+    "stackOwner": "PowerPlatfromViaNATGW"
+  }
+}

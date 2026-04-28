@@ -134,6 +134,8 @@ See [docs/PROOF-GUIDE.md](docs/PROOF-GUIDE.md) for the step-by-step screenshot a
 - [docs/LIMITATIONS.md](docs/LIMITATIONS.md) states the customer-facing limitations and expectations.
 - [docs/SCENARIOS.md](docs/SCENARIOS.md) lists working scenarios versus not working or not guaranteed scenarios.
 - [docs/API-IPIFY-PROOF.md](docs/API-IPIFY-PROOF.md) shows how to interpret an `api.ipify.org` proof response. In the captured demo, `api.ipify.org` returned `20.86.93.37`, so it is documented as **not a valid NAT Gateway proof** for this run.
+- [docs/CONNECTOR-GATEWAY-BEHAVIOR.md](docs/CONNECTOR-GATEWAY-BEHAVIOR.md) explains why connector tests can succeed while still showing a Microsoft-managed egress IP instead of the NAT Gateway IP.
+- [docs/AWS-CHECKIP-PROOF.md](docs/AWS-CHECKIP-PROOF.md) records the AWS-hosted `checkip.amazonaws.com` test. It also returned `20.86.93.37`, so AWS-side allowlisting must be validated with destination logs before assuming the NAT Gateway IPs are observed.
 
 ## AWS MCP Diagnostic Tool
 

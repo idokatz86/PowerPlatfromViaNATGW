@@ -14,12 +14,18 @@ Read [LIMITATIONS.md](LIMITATIONS.md) before using this design with an AWS-hoste
 
 ## What AWS Must Allow
 
-For a public AWS MCP endpoint, AWS must allow inbound HTTPS from the Azure NAT Gateway public IPs.
+For a public AWS MCP endpoint, the original target design is to allow inbound HTTPS from the Azure NAT Gateway public IPs.
 
 | Azure NAT Gateway | Region | Public IP | AWS action |
 | --- | --- | --- | --- |
 | `ppnatgw-nat-weu` | West Europe | `51.124.38.135` | Add to allowlist for high availability / paired-region path |
 | `ppnatgw-nat-neu` | North Europe | `20.166.89.8` | Add to allowlist; this is the proven active path |
+
+Do not treat this table as the final AWS allowlist until AWS-side logs prove that AWS actually observes one of these IPs.
+
+In this demo, the AWS-hosted `checkip.amazonaws.com` test returned `20.86.93.37`, not either NAT Gateway IP. That means an AWS WAF, API Gateway, ALB, or application allowlist containing only `20.166.89.8` and `51.124.38.135` would likely block the tested public connector path.
+
+Use [AWS-CHECKIP-PROOF.md](AWS-CHECKIP-PROOF.md) and the included AWS-side MCP ingress probe before locking down the AWS source IP allowlist.
 
 Depending on how the MCP endpoint is exposed, the customer may need to update one or more of these AWS controls:
 
