@@ -3,4 +3,5 @@
 .azure/*.log
 .azure/*.txt
 .azure/*.zip
+infra/*.json
 .DS_Store

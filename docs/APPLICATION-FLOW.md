@@ -27,6 +27,27 @@ sequenceDiagram
     Probe-->>CC: Echo observed source IP and headers
 ```
 
+## Regional Proxy Flow
+
+```mermaid
+sequenceDiagram
+  participant User as Maker / Workflow Trigger
+  participant App as Power Automate or Logic App
+  participant Proxy as Regional Container Apps Proxy
+  participant NAT as Regional Azure NAT Gateway
+  participant Echo as ipify / AWS checkip / AWS MCP
+
+  User->>App: Trigger app, flow, or workflow
+  App->>Proxy: Call approved regional proxy endpoint
+  Proxy->>NAT: Outbound HTTPS from proxy subnet
+  NAT->>Echo: Source NAT to regional static public IP
+  Echo-->>Proxy: Return observed source IP or MCP response
+  Proxy-->>App: Return proxy proof / MCP result
+  App-->>User: Display or store result
+```
+
+The proxy flow is the enforceable AWS-facing pattern. Power Automate and Logic Apps do not call AWS or public echo services directly; they call the regional proxy, and the proxy owns outbound egress.
+
 ## Proof Flow
 
 ```mermaid
@@ -56,6 +77,8 @@ flowchart TD
 | Destination sees Power Automate service IP | Wrong workload path | Use VNet-supported custom connector or Dataverse plug-in instead of built-in HTTP |
 | AWS returns 403 | AWS allowlist/auth blocked the call | Check AWS WAF/IP set/security group/API Gateway resource policy and connector authentication |
 | AWS timeout | Network path or endpoint unreachable | Confirm public DNS, TLS certificate, route, listener, and inbound 443 rules |
+| Proxy proof returns non-NAT IP | Proxy subnet or NAT association is wrong | Check Container Apps environment subnet delegation and NAT Gateway association |
+| Direct flow still reaches AWS | Bypass path is still allowed | Block direct HTTP/unapproved connectors and enforce AWS allowlist for proxy NAT IPs only |
 
 ## Confirmed Demo Flow
 
@@ -65,4 +88,18 @@ NAT Proof Inspector custom connector
   -> North Europe delegated connector runtime
   -> NAT Gateway public IP 20.166.89.8
   -> France Central inspection endpoint
+```
+
+```text
+North Europe Logic App example
+  -> North Europe Container Apps proxy
+  -> NAT Gateway public IP 20.166.89.8
+  -> api.ipify.org and checkip.amazonaws.com
+```
+
+```text
+West Europe Logic App example
+  -> West Europe Container Apps proxy
+  -> NAT Gateway public IP 51.124.38.135
+  -> api.ipify.org and checkip.amazonaws.com
 ```

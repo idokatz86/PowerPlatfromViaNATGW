@@ -49,6 +49,15 @@ Power App / Power Automate flow
 
 That proxy can be Azure API Management in VNet mode, Azure Container Apps with VNet integration, Azure Functions Premium with VNet integration, App Service with VNet integration, AKS, or another customer-managed API gateway. In that model, AWS allowlists the public IP of the proxy egress path, not an opaque Power Platform connector gateway IP.
 
+This repo now includes a validated Azure Container Apps implementation of that proxy pattern:
+
+| Region | Proxy URL | NAT Gateway public IP | Proof result |
+| --- | --- | --- | --- |
+| North Europe | `https://ppnatgw-proxy.yellowmeadow-5cf2ecd6.northeurope.azurecontainerapps.io` | `20.166.89.8` | `api.ipify.org` and `checkip.amazonaws.com` both observed `20.166.89.8` |
+| West Europe | `https://ppnatgw-proxy-weu.orangesea-6ab30ac0.westeurope.azurecontainerapps.io` | `51.124.38.135` | `api.ipify.org` and `checkip.amazonaws.com` both observed `51.124.38.135` |
+
+See [docs/CONTAINER-APPS-PROXY-PROOF.md](docs/CONTAINER-APPS-PROXY-PROOF.md) for the evidence.
+
 ## Prerequisites
 
 ### Power Platform Environment And Licensing
@@ -122,6 +131,30 @@ Validate Azure networking:
 ./scripts/05-verify-azure-network.sh
 ```
 
+Deploy the customer-controlled Container Apps proxy in each region:
+
+```bash
+./scripts/10-deploy-container-apps-proxy.sh
+
+PROXY_LOCATION=westeurope \
+PROXY_VNET_NAME=ppnatgw-vnet-weu \
+PROXY_SUBNET_PREFIX=10.42.10.0/23 \
+PROXY_NAT_NAME=ppnatgw-nat-weu \
+PROXY_PUBLIC_IP_NAME=ppnatgw-pip-weu \
+PROXY_LOG_ANALYTICS_NAME=ppnatgw-proxy-law-weu \
+PROXY_CONTAINER_ENV_NAME=ppnatgw-proxy-env-weu \
+PROXY_CONTAINER_APP_NAME=ppnatgw-proxy-weu \
+PROXY_ACR_NAME=ppnatgwproxyweu06311682 \
+PROXY_OUTPUT_PATH=.azure/container-apps-proxy-weu.json \
+./scripts/10-deploy-container-apps-proxy.sh
+```
+
+Deploy and test the Logic App examples that call only the regional proxy endpoints:
+
+```bash
+./scripts/11-deploy-logicapp-proxy-example.sh
+```
+
 ## Proof
 
 Use a VNet-supported Power Platform custom connector or Dataverse plug-in to call a request-inspection endpoint. The destination must observe the same source IP as the NAT Gateway public IP for the regional subnet used by the workload.
@@ -145,6 +178,15 @@ Important follow-up tests against public IP echo services showed different behav
 
 Those results mean the public connector gateway path reached the internet, but those destinations did not see the configured NAT Gateway IPs. For AWS MCP, the customer must validate the final observed source IP from AWS-side logs before locking down source IP allowlists.
 
+The proxy pattern was then validated successfully against those same public echo destinations:
+
+| Proxy path | `api.ipify.org` observed IP | `checkip.amazonaws.com` observed IP | Classification |
+| --- | --- | --- | --- |
+| North Europe Container Apps proxy | `20.166.89.8` | `20.166.89.8` | Valid NAT proof |
+| West Europe Container Apps proxy | `51.124.38.135` | `51.124.38.135` | Valid NAT proof |
+
+Logic App examples that call only those proxy endpoints were also deployed and validated. See [docs/LOGIC-APP-PROXY-EXAMPLE.md](docs/LOGIC-APP-PROXY-EXAMPLE.md).
+
 See [docs/PROOF-GUIDE.md](docs/PROOF-GUIDE.md) for the step-by-step screenshot and evidence checklist.
 
 ## Architecture And Flow
@@ -157,6 +199,10 @@ See [docs/PROOF-GUIDE.md](docs/PROOF-GUIDE.md) for the step-by-step screenshot a
 - [docs/API-IPIFY-PROOF.md](docs/API-IPIFY-PROOF.md) shows how to interpret an `api.ipify.org` proof response. In the captured demo, `api.ipify.org` returned `20.86.93.37`, so it is documented as **not a valid NAT Gateway proof** for this run.
 - [docs/CONNECTOR-GATEWAY-BEHAVIOR.md](docs/CONNECTOR-GATEWAY-BEHAVIOR.md) explains why connector tests can succeed while still showing a Microsoft-managed egress IP instead of the NAT Gateway IP.
 - [docs/AWS-CHECKIP-PROOF.md](docs/AWS-CHECKIP-PROOF.md) records the AWS-hosted `checkip.amazonaws.com` test. It also returned `20.86.93.37`, so AWS-side allowlisting must be validated with destination logs before assuming the NAT Gateway IPs are observed.
+- [docs/CONTAINER-APPS-PROXY-PROOF.md](docs/CONTAINER-APPS-PROXY-PROOF.md) records the two-region customer-controlled proxy proof.
+- [docs/POWER-AUTOMATE-PROXY-EXAMPLE.md](docs/POWER-AUTOMATE-PROXY-EXAMPLE.md) describes the regional Power Automate proxy connector example.
+- [docs/LOGIC-APP-PROXY-EXAMPLE.md](docs/LOGIC-APP-PROXY-EXAMPLE.md) describes the deployed Logic App regional proxy examples.
+- [docs/REGIONAL-PROXY-ENFORCEMENT.md](docs/REGIONAL-PROXY-ENFORCEMENT.md) explains how to enforce the proxy architecture and what remains out of scope.
 
 ## AWS MCP Diagnostic Tool
 
@@ -203,6 +249,8 @@ Power App / Power Automate flow
 ```
 
 This pattern is enforceable because the AWS-facing request is made by a workload running in a customer-controlled Azure subnet. Attach NAT Gateway for stable SNAT, or use Azure Firewall when the customer needs egress logging, FQDN filtering, and policy control.
+
+For production enforcement, combine the proxy with Power Platform DLP, environment controls, Azure deployment guardrails, proxy authentication, and AWS deny-by-default allowlisting. The proxy is an explicit API hop. It does not transparently intercept every possible Power Platform or Logic Apps outbound request.
 
 The pattern to avoid for deterministic NAT egress is:
 

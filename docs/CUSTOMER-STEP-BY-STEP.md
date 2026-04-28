@@ -8,7 +8,7 @@ Power Platform traffic from a VNet-supported workload should reach an external s
 
 The proof is valid only when the destination service observes the NAT Gateway public IP in the inbound request.
 
-Before starting, read [LIMITATIONS.md](LIMITATIONS.md) and [SCENARIOS.md](SCENARIOS.md). The most important limitation is that this design proves the VNet-supported custom connector path. It does not force the normal built-in Power Automate HTTP action or built-in Logic Apps actions through this NAT Gateway.
+Before starting, read [LIMITATIONS.md](LIMITATIONS.md), [SCENARIOS.md](SCENARIOS.md), and [REGIONAL-PROXY-ENFORCEMENT.md](REGIONAL-PROXY-ENFORCEMENT.md). The most important limitation is that this design does not transparently force every outbound action through NAT Gateway. For deterministic AWS-bound traffic, use the customer-controlled regional proxy pattern and block direct bypass paths with governance and AWS allowlists.
 
 ## Required Access
 
@@ -145,6 +145,70 @@ az webapp log download \
   --log-file /tmp/ppnatgw-inspection.zip
 ```
 
+## 10. Deploy The Regional Proxy Pattern
+
+Use this when the customer needs AWS to see a deterministic source IP for Power Platform or Logic Apps traffic.
+
+North Europe:
+
+```bash
+./scripts/10-deploy-container-apps-proxy.sh
+```
+
+West Europe:
+
+```bash
+PROXY_LOCATION=westeurope \
+PROXY_VNET_NAME=ppnatgw-vnet-weu \
+PROXY_SUBNET_PREFIX=10.42.10.0/23 \
+PROXY_NAT_NAME=ppnatgw-nat-weu \
+PROXY_PUBLIC_IP_NAME=ppnatgw-pip-weu \
+PROXY_LOG_ANALYTICS_NAME=ppnatgw-proxy-law-weu \
+PROXY_CONTAINER_ENV_NAME=ppnatgw-proxy-env-weu \
+PROXY_CONTAINER_APP_NAME=ppnatgw-proxy-weu \
+PROXY_ACR_NAME=ppnatgwproxyweu06311682 \
+PROXY_OUTPUT_PATH=.azure/container-apps-proxy-weu.json \
+./scripts/10-deploy-container-apps-proxy.sh
+```
+
+The proof is valid when both `api.ipify.org` and `checkip.amazonaws.com` return the regional NAT Gateway IP. This demo proved:
+
+| Region | Expected and observed IP |
+| --- | --- |
+| North Europe | `20.166.89.8` |
+| West Europe | `51.124.38.135` |
+
+See [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md).
+
+## 11. Create Power Automate And Logic App Examples
+
+Create the regional Power Platform custom connectors from:
+
+- [../connectors/containerapps-proxy-neu.swagger.json](../connectors/containerapps-proxy-neu.swagger.json)
+- [../connectors/containerapps-proxy-weu.swagger.json](../connectors/containerapps-proxy-weu.swagger.json)
+
+Then build a flow that calls only `NEU NAT Proxy` or `WEU NAT Proxy`. See [POWER-AUTOMATE-PROXY-EXAMPLE.md](POWER-AUTOMATE-PROXY-EXAMPLE.md).
+
+Deploy the Logic App example:
+
+```bash
+./scripts/11-deploy-logicapp-proxy-example.sh
+```
+
+See [LOGIC-APP-PROXY-EXAMPLE.md](LOGIC-APP-PROXY-EXAMPLE.md).
+
+## 12. Enforce The Customer Boundary
+
+Use all of these controls together:
+
+| Control | Required customer action |
+| --- | --- |
+| Power Platform DLP | Allow only approved proxy custom connectors for this scenario; block or isolate built-in HTTP/direct connectors. |
+| Environment governance | Restrict who can create custom connectors and flows in the production environment. |
+| Proxy security | Add APIM, OAuth, mTLS, API key, or equivalent production authentication. |
+| AWS allowlist | Allow only `20.166.89.8` and `51.124.38.135` for this integration path. |
+| Bypass test | Confirm a direct call that does not use the proxy is blocked by DLP or rejected by AWS. |
+
 ## Current Demo Result
 
 The current demo proved the North Europe NAT Gateway path:
@@ -156,11 +220,19 @@ x-ms-subnet-delegation-enabled = true
 
 See [NAT-PROOF-RESULTS.md](NAT-PROOF-RESULTS.md).
 
+The regional proxy pattern proved both Europe NAT Gateway IPs:
+
+```text
+North Europe proxy -> 20.166.89.8
+West Europe proxy  -> 51.124.38.135
+```
+
 ## Important Limitations
 
 - Full limitation details are documented in [LIMITATIONS.md](LIMITATIONS.md).
 - Working versus not working examples are documented in [SCENARIOS.md](SCENARIOS.md).
 - A single custom connector call proves only the Power Platform regional runtime path that handled that call.
-- The current demo proved North Europe. West Europe is configured but has not yet been observed by the destination endpoint.
+- The Power Platform inspection endpoint proof currently proves North Europe. The customer-controlled proxy proof validates both North Europe and West Europe.
 - Built-in Power Automate HTTP actions are not a clean proof path because they can egress from shared Power Automate/Logic Apps infrastructure.
+- The proxy pattern is an explicit API hop, not transparent interception. Direct bypass paths must be blocked by DLP/governance and by AWS deny-by-default allowlisting.
 - The proof endpoint uses `client-ip` as the primary observed source because Azure App Service sets that header to the client IP observed by the destination front end.

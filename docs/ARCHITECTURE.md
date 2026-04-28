@@ -27,6 +27,8 @@ flowchart LR
         end
 
         Inspect[Inspection Web App\nFrance Central\nppnatgw-inspect-frc-06311682]
+        ProxyNEU[Container Apps Proxy\nNorth Europe\n20.166.89.8]
+        ProxyWEU[Container Apps Proxy\nWest Europe\n51.124.38.135]
     end
 
     AwsMcp[AWS-hosted MCP endpoint\nCustomer workload]
@@ -38,6 +40,10 @@ flowchart LR
     PipWEU -. outbound allowlist .-> AwsMcp
     PipNEU -. outbound allowlist .-> AwsMcp
     PipNEU --> Inspect
+    Env -. approved proxy connector .-> ProxyNEU
+    Env -. approved proxy connector .-> ProxyWEU
+    ProxyNEU --> AwsMcp
+    ProxyWEU --> AwsMcp
 ```
 
 ## Key Design Choices
@@ -49,6 +55,7 @@ flowchart LR
 | Standard static public IPs | Provides stable IPs that downstream services, including AWS, can allowlist. |
 | External inspection endpoint | Proves the source IP from the destination side rather than relying on Azure configuration alone. |
 | Custom connector proof path | VNet-supported connector execution is the relevant path; built-in HTTP actions are ambiguous. |
+| Customer-controlled proxy path | Provides an enforceable AWS-facing egress point for Power Platform and Logic Apps integrations. |
 
 ## Proven Path
 
@@ -73,3 +80,20 @@ Expected West Europe destination-observed IP: 51.124.38.135
 ```
 
 That proof requires a Power Platform execution path that runs from the West Europe paired runtime.
+
+## Validated Regional Proxy Path
+
+The customer-controlled proxy pattern is proven in both regional VNets:
+
+```text
+Power Platform or Logic App
+    -> regional proxy endpoint
+    -> Container Apps subnet in regional VNet
+    -> regional NAT Gateway public IP
+    -> api.ipify.org / checkip.amazonaws.com / AWS MCP
+```
+
+| Region | Proxy endpoint | Destination-observed IP |
+| --- | --- | --- |
+| North Europe | `https://ppnatgw-proxy.yellowmeadow-5cf2ecd6.northeurope.azurecontainerapps.io` | `20.166.89.8` |
+| West Europe | `https://ppnatgw-proxy-weu.orangesea-6ab30ac0.westeurope.azurecontainerapps.io` | `51.124.38.135` |

@@ -1,0 +1,54 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "WEU NAT Proxy",
+    "description": "Calls the West Europe customer-controlled Container Apps proxy. The proxy performs outbound calls through the West Europe NAT Gateway.",
+    "version": "1.0.0"
+  },
+  "host": "ppnatgw-proxy-weu.orangesea-6ab30ac0.westeurope.azurecontainerapps.io",
+  "basePath": "/",
+  "schemes": ["https"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "paths": {
+    "/proxy/all": {
+      "get": {
+        "summary": "Run both NAT proof checks",
+        "description": "Calls api.ipify.org and checkip.amazonaws.com from the West Europe proxy subnet and returns the destination-observed source IPs.",
+        "operationId": "GetAllProxyProofs",
+        "responses": {
+          "200": {
+            "description": "Proxy NAT proof result",
+            "schema": { "type": "object" }
+          }
+        }
+      }
+    },
+    "/proxy/ipify": {
+      "get": {
+        "summary": "Run ipify NAT proof",
+        "description": "Calls api.ipify.org from the West Europe proxy subnet.",
+        "operationId": "GetIpifyProxyProof",
+        "responses": {
+          "200": {
+            "description": "ipify proxy proof result",
+            "schema": { "type": "object" }
+          }
+        }
+      }
+    },
+    "/proxy/aws-checkip": {
+      "get": {
+        "summary": "Run AWS checkip NAT proof",
+        "description": "Calls checkip.amazonaws.com from the West Europe proxy subnet.",
+        "operationId": "GetAwsCheckIpProxyProof",
+        "responses": {
+          "200": {
+            "description": "AWS checkip proxy proof result",
+            "schema": { "type": "object" }
+          }
+        }
+      }
+    }
+  }
+}

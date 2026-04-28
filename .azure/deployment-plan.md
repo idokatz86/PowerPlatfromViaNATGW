@@ -1,4 +1,91 @@
-# PowerPlatfromViaNATGW Deployment Plan
+# Deployment Plan: Azure Container Apps NAT Proxy Proof
+
+Status: Validated
+
+## 1. Goal
+
+Deploy customer-controlled Azure Container Apps proxies that call external IP echo services from inside the existing North Europe and West Europe VNets with NAT Gateway egress, then prove the observed public source IP for each region.
+
+## 2. Scope
+
+- Add a small proxy API to this repository.
+- Deploy it to Azure Container Apps.
+- Place one Container Apps environment in a new dedicated subnet inside the existing `ppnatgw-vnet-neu` VNet.
+- Place a second Container Apps environment in a new dedicated subnet inside the existing `ppnatgw-vnet-weu` VNet.
+- Delegate that subnet to `Microsoft.App/environments`.
+- Attach the existing North Europe NAT Gateway `ppnatgw-nat-neu` to the North Europe Container Apps infrastructure subnet.
+- Attach the existing West Europe NAT Gateway `ppnatgw-nat-weu` to the West Europe Container Apps infrastructure subnet.
+- Test these outbound calls through the proxy:
+  - `https://api.ipify.org/?format=json`
+  - `https://checkip.amazonaws.com/`
+- Capture evidence and update docs.
+
+## 3. Azure Context
+
+- Subscription: `3cce1c0d-4798-48da-92cd-daaf643e932c`
+- Tenant: `0bf51094-2478-4975-9cbc-61fb8c649e62`
+- Resource group: `rg-ppnatgw-demo`
+- North Europe region: `northeurope`
+- North Europe VNet: `ppnatgw-vnet-neu`
+- North Europe Container Apps subnet: `snet-containerapps-proxy` (`10.43.10.0/23`)
+- North Europe NAT Gateway: `ppnatgw-nat-neu`
+- North Europe NAT public IP: `20.166.89.8`
+- West Europe region: `westeurope`
+- West Europe VNet: `ppnatgw-vnet-weu`
+- West Europe Container Apps subnet: `snet-containerapps-proxy` (`10.42.10.0/23`)
+- West Europe NAT Gateway: `ppnatgw-nat-weu`
+- West Europe NAT public IP: `51.124.38.135`
+
+## 4. Architecture
+
+```text
+Power Platform, Logic App, or browser test
+  -> regional Azure Container Apps proxy public endpoint
+  -> Container Apps workload subnet in existing regional VNet
+  -> existing regional NAT Gateway public IP
+  -> api.ipify.org / checkip.amazonaws.com
+```
+
+## 5. Deployment Steps
+
+- Build proxy container image.
+- Create resource group.
+- Add new Container Apps delegated subnets to the existing North Europe and West Europe VNets.
+- Attach the existing regional NAT Gateways to those subnets.
+- Create Log Analytics workspaces and Container Apps environments.
+- Deploy Container Apps.
+- Verify `/health`, `/proxy/ipify`, and `/proxy/aws-checkip`.
+- Deploy Logic App examples that call only the regional proxy endpoints.
+
+## 6. Validation Proof
+
+Validated on 2026-04-28.
+
+North Europe Container Apps proxy:
+
+- URL: `https://ppnatgw-proxy.yellowmeadow-5cf2ecd6.northeurope.azurecontainerapps.io`
+- NAT Gateway public IP: `20.166.89.8`
+- `/proxy/ipify` observed `20.166.89.8`, `natProof: true`
+- `/proxy/aws-checkip` observed `20.166.89.8`, `natProof: true`
+- Evidence: `docs/evidence/containerapps-proxy-neu-2026-04-28.json`
+
+West Europe Container Apps proxy:
+
+- URL: `https://ppnatgw-proxy-weu.orangesea-6ab30ac0.westeurope.azurecontainerapps.io`
+- NAT Gateway public IP: `51.124.38.135`
+- `/proxy/ipify` observed `51.124.38.135`, `natProof: true`
+- `/proxy/aws-checkip` observed `51.124.38.135`, `natProof: true`
+- Evidence: `docs/evidence/containerapps-proxy-weu-2026-04-28.json`
+
+Logic App examples:
+
+- North Europe workflow `ppnatgw-proxy-proof-neu-la` called only the North Europe proxy and observed `20.166.89.8`.
+- West Europe workflow `ppnatgw-proxy-proof-weu-la` called only the West Europe proxy and observed `51.124.38.135`.
+- Evidence: `docs/evidence/logicapp-proxy-neu-2026-04-28.json` and `docs/evidence/logicapp-proxy-weu-2026-04-28.json`.
+
+## 7. Deployment Results
+
+Regional Container Apps proxies and Logic App examples deployed and validated.# PowerPlatfromViaNATGW Deployment Plan
 
 Status: Azure network, enterprise policy, and Power Platform subnet injection deployed in the M365x06311682 tenant
 

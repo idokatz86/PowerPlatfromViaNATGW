@@ -16,6 +16,8 @@ These scenarios are expected to use the Azure NAT Gateway public IP when the Pow
 | Dataverse plug-in uses the VNet-supported path to call an external endpoint | External endpoint should see the NAT Gateway public IP | Supported Dataverse plug-ins can execute through virtual network support | Destination-side source IP log |
 | Custom connector calls an Azure private endpoint-backed service reachable from the delegated network design | Traffic uses the virtual network-supported connector path | The target service is reachable through the configured network path | Service logs, private DNS, and connector test result |
 | AWS MCP endpoint has WAF/API Gateway/ALB allowlist for both NAT IPs | Request is allowed when app authentication also succeeds | AWS permits the stable Azure NAT public source IPs | AWS access logs plus app response |
+| Power Automate flow calls only the regional Container Apps proxy connector | AWS or public proof endpoint sees the proxy NAT IP | The AWS-facing call is made by the customer-controlled proxy in a VNet subnet with NAT Gateway | Proxy response and AWS logs show `20.166.89.8` or `51.124.38.135` |
+| Logic App workflow calls only the regional Container Apps proxy URL | AWS or public proof endpoint sees the proxy NAT IP | The Logic App does not egress to AWS directly; it calls the customer-controlled proxy | Logic App response shows proxy proof result |
 
 ## Not Working Or Not Guaranteed Scenarios
 
@@ -33,6 +35,7 @@ These scenarios should not be presented as deterministic NAT Gateway egress from
 | AWS endpoint is private-only inside a VPC with no public ingress | NAT Gateway public egress alone cannot reach it | NAT Gateway is outbound internet SNAT, not private cross-cloud connectivity | Use VPN/ExpressRoute/Direct Connect pattern, or expose a secured public ingress |
 | AWS only allowlists one NAT IP | Some paired-region/failover traffic can be blocked | Europe has West Europe and North Europe delegated paths | Allowlist both `51.124.38.135` and `20.166.89.8` |
 | Destination trusts the first `X-Forwarded-For` hop without understanding proxies | Wrong IP may be interpreted as the source | Forwarding headers can contain multiple hops | Use trusted proxy rules and platform access logs |
+| Makers can still use direct HTTP or unapproved connectors | Traffic can bypass the proxy | The proxy is an explicit API hop, not transparent interception | Use DLP, environment isolation, connector approval, and AWS deny-by-default allowlisting |
 
 ## Current Demo Status
 
@@ -42,6 +45,9 @@ These scenarios should not be presented as deterministic NAT Gateway egress from
 | West Europe custom connector egress through NAT `51.124.38.135` | Configured, not yet observed | Requires West Europe runtime execution, failover, or support-guided validation |
 | `api.ipify.org` custom connector proof | Tested, not valid NAT proof | Returned `20.86.93.37`, not `20.166.89.8` or `51.124.38.135`; see [API-IPIFY-PROOF.md](API-IPIFY-PROOF.md) |
 | AWS `checkip.amazonaws.com` custom connector proof | Tested, not valid NAT proof | Returned `20.86.93.37`, not `20.166.89.8` or `51.124.38.135`; see [AWS-CHECKIP-PROOF.md](AWS-CHECKIP-PROOF.md) |
+| North Europe Container Apps proxy proof | Proven | `api.ipify.org` and `checkip.amazonaws.com` both observed `20.166.89.8`; see [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
+| West Europe Container Apps proxy proof | Proven | `api.ipify.org` and `checkip.amazonaws.com` both observed `51.124.38.135`; see [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
+| Logic App examples through regional proxies | Proven | NEU workflow observed `20.166.89.8`; WEU workflow observed `51.124.38.135`; see [LOGIC-APP-PROXY-EXAMPLE.md](LOGIC-APP-PROXY-EXAMPLE.md) |
 | Built-in Power Automate HTTP action through NAT Gateway | Not proven and not recommended | Use custom connector path instead |
 | AWS MCP call through NAT Gateway | Prepared but not deployed/tested in AWS | Use [AWS-MCP-INTEGRATION.md](AWS-MCP-INTEGRATION.md) and [tools/mcp-ingress-probe](../tools/mcp-ingress-probe) |
 
@@ -51,7 +57,8 @@ If the customer needs a stable outbound source IP for an external service, use t
 
 ```text
 Need deterministic Power Platform outbound IP?
-  -> Use a VNet-supported custom connector or supported Dataverse plug-in.
-  -> Prove from the destination logs.
-  -> Do not use built-in HTTP action as the proof path.
+  -> Prefer the customer-controlled regional proxy pattern for AWS-bound traffic.
+  -> Make Power Platform call only the approved regional proxy custom connector.
+  -> Prove from proxy output and AWS destination logs.
+  -> Use DLP and AWS allowlists to block direct bypass paths.
 ```

@@ -27,6 +27,13 @@ x-ms-subnet-delegation-enabled = true
 
 That proves the North Europe NAT Gateway path for this environment.
 
+This repository also proves a customer-controlled proxy path in both Europe regions:
+
+| Region | Proxy path observed IP | Evidence |
+| --- | --- | --- |
+| North Europe | `20.166.89.8` | [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
+| West Europe | `51.124.38.135` | [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
+
 ## What This Solution Does Not Prove
 
 This solution does not prove that every Power Platform or Azure workflow action will use the NAT Gateway.
@@ -39,6 +46,7 @@ This solution does not prove that every Power Platform or Azure workflow action 
 | Built-in Logic Apps action | Not covered by this design | Logic Apps has separate networking patterns. |
 | All Power Platform connectors | Not guaranteed | Only VNet-supported connector/runtime paths should be treated as NAT-controlled. |
 | Private AWS endpoint access | Not provided by NAT Gateway alone | NAT Gateway gives stable public egress, not private cross-cloud routing. |
+| Transparent interception of all outbound calls | Not provided | The proxy must be called explicitly, and governance must block direct alternatives. |
 
 ## Power Automate And Logic Apps Limitation
 
@@ -63,6 +71,17 @@ Power Automate built-in HTTP action
 
 That second path may work functionally, but it does not provide this NAT Gateway source-IP guarantee.
 
+For deterministic cross-service egress, use the regional proxy pattern:
+
+```text
+Power Automate or Logic App
+  -> regional customer-controlled proxy endpoint
+  -> proxy subnet with NAT Gateway
+  -> external service
+```
+
+This pattern is proven in this repo, but it still relies on app design and governance. It does not automatically rewrite or intercept arbitrary outbound calls.
+
 ## Paired-Region Limitation
 
 Power Platform geographies can use paired regional runtime paths. Europe maps to West Europe and North Europe.
@@ -73,6 +92,8 @@ This demo deployed both NAT Gateways:
 | --- | --- | --- |
 | West Europe | `51.124.38.135` | Configured, not yet destination-observed |
 | North Europe | `20.166.89.8` | Proven by `powerplatform-test-009` |
+
+For the Container Apps proxy architecture, both regional NAT IPs are destination-observed and proven.
 
 A single successful connector call proves only the regional runtime path that handled that call. During this test, Power Platform executed from the North Europe path. Proving the West Europe path requires a call that actually runs from the West Europe paired runtime path, a failover event, or support-guided validation.
 

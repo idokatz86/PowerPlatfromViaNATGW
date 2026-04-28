@@ -10,6 +10,16 @@ Power App / Power Automate
   -> AWS-hosted MCP endpoint
 ```
 
+For deterministic AWS allowlisting, the recommended validated flow is now:
+
+```text
+Power App / Power Automate / Logic App
+  -> approved regional proxy connector or proxy URL
+  -> Azure Container Apps proxy in customer VNet
+  -> Azure NAT Gateway public IP
+  -> AWS-hosted MCP endpoint
+```
+
 Read [LIMITATIONS.md](LIMITATIONS.md) before using this design with an AWS-hosted MCP endpoint. This design provides deterministic public egress for the VNet-supported custom connector path; it does not provide private AWS connectivity or force built-in Power Automate HTTP actions through the NAT Gateway.
 
 ## What AWS Must Allow
@@ -26,6 +36,15 @@ Do not treat this table as the final AWS allowlist until AWS-side logs prove tha
 In this demo, the AWS-hosted `checkip.amazonaws.com` test returned `20.86.93.37`, not either NAT Gateway IP. That means an AWS WAF, API Gateway, ALB, or application allowlist containing only `20.166.89.8` and `51.124.38.135` would likely block the tested public connector path.
 
 Use [AWS-CHECKIP-PROOF.md](AWS-CHECKIP-PROOF.md) and the included AWS-side MCP ingress probe before locking down the AWS source IP allowlist.
+
+The customer-controlled proxy pattern has been validated against AWS `checkip.amazonaws.com`:
+
+| Proxy region | AWS checkip observed IP | Classification | Evidence |
+| --- | --- | --- | --- |
+| North Europe proxy | `20.166.89.8` | Valid NAT proof | [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
+| West Europe proxy | `51.124.38.135` | Valid NAT proof | [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
+
+For production, AWS should allowlist the proxy NAT IPs and reject direct bypass paths that arrive from Microsoft-managed connector or Logic Apps public IPs.
 
 Depending on how the MCP endpoint is exposed, the customer may need to update one or more of these AWS controls:
 
