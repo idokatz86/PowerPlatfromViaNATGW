@@ -5,30 +5,30 @@
 ```mermaid
 flowchart LR
     Maker[Power Platform maker/tester]
-    Env[Power Platform Environment\nf021725d-8eeb-e31b-9427-7334c58a3a5b]
+    Env[Power Platform Environment\n<power-platform-environment-id>]
     Connector[NAT Proof Inspector\nCustom Connector]
-    Policy[Power Platform Enterprise Policy\nppnatgw-europe-policy]
+    Policy[Power Platform Enterprise Policy\n<enterprise-policy-name>]
 
-    subgraph AzureSub[Azure subscription 3cce1c0d-4798-48da-92cd-daaf643e932c]
+    subgraph AzureSub[Azure subscription <azure-subscription-id>]
         subgraph WEU[West Europe]
-            VNetWEU[ppnatgw-vnet-weu]
+            VNetWEU[<west-region-vnet-name>]
             SubnetWEU[snet-powerplatform-delegated\nMicrosoft.PowerPlatform/enterprisePolicies]
-            NatWEU[ppnatgw-nat-weu]
-            PipWEU[Public IP\n51.124.38.135]
+            NatWEU[<west-region-nat-gateway-name>]
+            PipWEU[Public IP\n<west-region-nat-ip>]
             VNetWEU --> SubnetWEU --> NatWEU --> PipWEU
         end
 
         subgraph NEU[North Europe]
-            VNetNEU[ppnatgw-vnet-neu]
+            VNetNEU[<north-region-vnet-name>]
             SubnetNEU[snet-powerplatform-delegated\nMicrosoft.PowerPlatform/enterprisePolicies]
-            NatNEU[ppnatgw-nat-neu]
-            PipNEU[Public IP\n20.166.89.8]
+            NatNEU[<north-region-nat-gateway-name>]
+            PipNEU[Public IP\n<north-region-nat-ip>]
             VNetNEU --> SubnetNEU --> NatNEU --> PipNEU
         end
 
-        Inspect[Inspection Web App\nFrance Central\nppnatgw-inspect-frc-06311682]
-        ProxyNEU[Container Apps Proxy\nNorth Europe\n20.166.89.8]
-        ProxyWEU[Container Apps Proxy\nWest Europe\n51.124.38.135]
+        Inspect[Inspection Web App\nSeparate validation region\n<inspection-web-app-name>]
+        ProxyNEU[Container Apps Proxy\nNorth Europe\n<north-region-nat-ip>]
+        ProxyWEU[Container Apps Proxy\nWest Europe\n<west-region-nat-ip>]
     end
 
     AwsMcp[AWS-hosted MCP endpoint\nCustomer workload]
@@ -64,22 +64,12 @@ The current proven call executed from the North Europe Power Platform runtime pa
 ```text
 Power Platform custom connector
   -> North Europe delegated subnet
-  -> ppnatgw-nat-neu
-  -> 20.166.89.8
+  -> <north-region-nat-gateway-name>
+  -> <north-region-nat-ip>
   -> France Central inspection endpoint
 ```
 
-The destination observed `20.166.89.8` and the request included `x-ms-subnet-delegation-enabled: true`.
-
-## Pending Path
-
-The West Europe NAT Gateway is deployed and bound by the enterprise policy, but it has not yet been observed by the destination endpoint:
-
-```text
-Expected West Europe destination-observed IP: 51.124.38.135
-```
-
-That proof requires a Power Platform execution path that runs from the West Europe paired runtime.
+The destination observed `<north-region-nat-ip>` and the request included `x-ms-subnet-delegation-enabled: true`.
 
 ## Validated Regional Proxy Path
 
@@ -95,5 +85,5 @@ Power Platform or Logic App
 
 | Region | Proxy endpoint | Destination-observed IP |
 | --- | --- | --- |
-| North Europe | `https://ppnatgw-proxy.yellowmeadow-5cf2ecd6.northeurope.azurecontainerapps.io` | `20.166.89.8` |
-| West Europe | `https://ppnatgw-proxy-weu.orangesea-6ab30ac0.westeurope.azurecontainerapps.io` | `51.124.38.135` |
+| North Europe | `https://<north-region-proxy-host>` | `<north-region-nat-ip>` |
+| West Europe | `https://<west-region-proxy-host>` | `<west-region-nat-ip>` |

@@ -5,7 +5,7 @@
     "description": "Calls the North Europe customer-controlled Container Apps proxy. The proxy performs outbound calls through the North Europe NAT Gateway.",
     "version": "1.0.0"
   },
-  "host": "ppnatgw-proxy.yellowmeadow-5cf2ecd6.northeurope.azurecontainerapps.io",
+  "host": "replace-with-north-region-proxy-host.example.com",
   "basePath": "/",
   "schemes": ["https"],
   "consumes": ["application/json"],

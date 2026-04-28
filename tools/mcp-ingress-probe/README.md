@@ -14,13 +14,13 @@ Deploy it temporarily beside the real MCP service or behind the same AWS ingress
 
 ## What To Check
 
-The response should show the NAT Gateway public IP as the source observed by the AWS ingress path.
+The response should show the customer-approved NAT Gateway or Azure Firewall public IP as the source observed by the AWS ingress path.
 
-For the current demo, expected values are:
+Example expected values:
 
 ```text
-20.166.89.8  # proven North Europe path
-51.124.38.135 # configured West Europe paired path, not yet observed
+<first-approved-egress-ip>
+<second-approved-egress-ip>
 ```
 
 ## Example MCP Probe Request

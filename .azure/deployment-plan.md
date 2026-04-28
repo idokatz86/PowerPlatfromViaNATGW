@@ -10,11 +10,11 @@ Deploy customer-controlled Azure Container Apps proxies that call external IP ec
 
 - Add a small proxy API to this repository.
 - Deploy it to Azure Container Apps.
-- Place one Container Apps environment in a new dedicated subnet inside the existing `ppnatgw-vnet-neu` VNet.
-- Place a second Container Apps environment in a new dedicated subnet inside the existing `ppnatgw-vnet-weu` VNet.
+- Place one Container Apps environment in a new dedicated subnet inside the existing `<north-region-vnet-name>` VNet.
+- Place a second Container Apps environment in a new dedicated subnet inside the existing `<west-region-vnet-name>` VNet.
 - Delegate that subnet to `Microsoft.App/environments`.
-- Attach the existing North Europe NAT Gateway `ppnatgw-nat-neu` to the North Europe Container Apps infrastructure subnet.
-- Attach the existing West Europe NAT Gateway `ppnatgw-nat-weu` to the West Europe Container Apps infrastructure subnet.
+- Attach the existing North Europe NAT Gateway `<north-region-nat-gateway-name>` to the North Europe Container Apps infrastructure subnet.
+- Attach the existing West Europe NAT Gateway `<west-region-nat-gateway-name>` to the West Europe Container Apps infrastructure subnet.
 - Test these outbound calls through the proxy:
   - `https://api.ipify.org/?format=json`
   - `https://checkip.amazonaws.com/`
@@ -22,19 +22,19 @@ Deploy customer-controlled Azure Container Apps proxies that call external IP ec
 
 ## 3. Azure Context
 
-- Subscription: `3cce1c0d-4798-48da-92cd-daaf643e932c`
-- Tenant: `0bf51094-2478-4975-9cbc-61fb8c649e62`
-- Resource group: `rg-ppnatgw-demo`
+- Subscription: `<azure-subscription-id>`
+- Tenant: `<microsoft-entra-tenant-id>`
+- Resource group: `<resource-group-name>`
 - North Europe region: `northeurope`
-- North Europe VNet: `ppnatgw-vnet-neu`
+- North Europe VNet: `<north-region-vnet-name>`
 - North Europe Container Apps subnet: `snet-containerapps-proxy` (`10.43.10.0/23`)
-- North Europe NAT Gateway: `ppnatgw-nat-neu`
-- North Europe NAT public IP: `20.166.89.8`
+- North Europe NAT Gateway: `<north-region-nat-gateway-name>`
+- North Europe NAT public IP: `<north-region-nat-ip>`
 - West Europe region: `westeurope`
-- West Europe VNet: `ppnatgw-vnet-weu`
+- West Europe VNet: `<west-region-vnet-name>`
 - West Europe Container Apps subnet: `snet-containerapps-proxy` (`10.42.10.0/23`)
-- West Europe NAT Gateway: `ppnatgw-nat-weu`
-- West Europe NAT public IP: `51.124.38.135`
+- West Europe NAT Gateway: `<west-region-nat-gateway-name>`
+- West Europe NAT public IP: `<west-region-nat-ip>`
 
 ## 4. Architecture
 
@@ -63,31 +63,31 @@ Validated on 2026-04-28.
 
 North Europe Container Apps proxy:
 
-- URL: `https://ppnatgw-proxy.yellowmeadow-5cf2ecd6.northeurope.azurecontainerapps.io`
-- NAT Gateway public IP: `20.166.89.8`
-- `/proxy/ipify` observed `20.166.89.8`, `natProof: true`
-- `/proxy/aws-checkip` observed `20.166.89.8`, `natProof: true`
+- URL: `https://<north-region-proxy-host>`
+- NAT Gateway public IP: `<north-region-nat-ip>`
+- `/proxy/ipify` observed `<north-region-nat-ip>`, `natProof: true`
+- `/proxy/aws-checkip` observed `<north-region-nat-ip>`, `natProof: true`
 - Evidence: `docs/evidence/containerapps-proxy-neu-2026-04-28.json`
 
 West Europe Container Apps proxy:
 
-- URL: `https://ppnatgw-proxy-weu.orangesea-6ab30ac0.westeurope.azurecontainerapps.io`
-- NAT Gateway public IP: `51.124.38.135`
-- `/proxy/ipify` observed `51.124.38.135`, `natProof: true`
-- `/proxy/aws-checkip` observed `51.124.38.135`, `natProof: true`
+- URL: `https://<west-region-proxy-host>`
+- NAT Gateway public IP: `<west-region-nat-ip>`
+- `/proxy/ipify` observed `<west-region-nat-ip>`, `natProof: true`
+- `/proxy/aws-checkip` observed `<west-region-nat-ip>`, `natProof: true`
 - Evidence: `docs/evidence/containerapps-proxy-weu-2026-04-28.json`
 
 Logic App examples:
 
-- North Europe workflow `ppnatgw-proxy-proof-neu-la` called only the North Europe proxy and observed `20.166.89.8`.
-- West Europe workflow `ppnatgw-proxy-proof-weu-la` called only the West Europe proxy and observed `51.124.38.135`.
+- North Europe workflow `<north-region-container-app-name>-proof-neu-la` called only the North Europe proxy and observed `<north-region-nat-ip>`.
+- West Europe workflow `<north-region-container-app-name>-proof-weu-la` called only the West Europe proxy and observed `<west-region-nat-ip>`.
 - Evidence: `docs/evidence/logicapp-proxy-neu-2026-04-28.json` and `docs/evidence/logicapp-proxy-weu-2026-04-28.json`.
 
 ## 7. Deployment Results
 
 Regional Container Apps proxies and Logic App examples deployed and validated.# PowerPlatfromViaNATGW Deployment Plan
 
-Status: Azure network, enterprise policy, and Power Platform subnet injection deployed in the M365x06311682 tenant
+Status: Azure network, enterprise policy, and Power Platform subnet injection deployed in the <tenant-display-name> tenant
 
 ## Goal
 Create a public GitHub repository and an end-to-end proof that a Power Platform environment using virtual network support exits the internet through an Azure NAT Gateway public IP attached to the delegated subnet.
@@ -103,16 +103,16 @@ The intended enforcement mechanism is subnet-level NAT Gateway association. For 
 
 ## Current Assumptions
 - Public repository is acceptable.
-- The active implementation uses tenant `0bf51094-2478-4975-9cbc-61fb8c649e62` and subscription `3cce1c0d-4798-48da-92cd-daaf643e932c`.
-- Power Platform environment `f021725d-8eeb-e31b-9427-7334c58a3a5b` is an existing Sandbox environment in Europe.
+- The active implementation uses tenant `<microsoft-entra-tenant-id>` and subscription `<azure-subscription-id>`.
+- Power Platform environment `<power-platform-environment-id>` is an existing Sandbox environment in Europe.
 - Power Platform tenant permissions and licenses must support Managed Environments and virtual network support.
 
 ## Current State
 - GitHub repository created and scaffold pushed.
-- Azure resource group, paired regional VNets, delegated subnets, NAT Gateways, and static public IPs deployed in subscription `3cce1c0d-4798-48da-92cd-daaf643e932c`.
-- Power Platform enterprise policy `ppnatgw-europe-policy` created in location `europe`.
-- Existing Power Platform Sandbox environment `f021725d-8eeb-e31b-9427-7334c58a3a5b` at `https://orgdb8a7af5.crm4.dynamics.com/` is visible to PAC.
-- Subnet injection was enabled successfully for environment `f021725d-8eeb-e31b-9427-7334c58a3a5b`.
+- Azure resource group, paired regional VNets, delegated subnets, NAT Gateways, and static public IPs deployed in subscription `<azure-subscription-id>`.
+- Power Platform enterprise policy `<enterprise-policy-name>` created in location `europe`.
+- Existing Power Platform Sandbox environment `<power-platform-environment-id>` at `https://<power-platform-environment-url>/` is visible to PAC.
+- Subnet injection was enabled successfully for environment `<power-platform-environment-id>`.
 
 ## Architecture
 - Power Platform geography: Europe.
@@ -149,14 +149,14 @@ The intended enforcement mechanism is subnet-level NAT Gateway association. For 
 
 ## Section 7: Validation Proof
 
-- Azure CLI authenticated as `ido@M365x06311682.onmicrosoft.com`.
-- Subscription: `3cce1c0d-4798-48da-92cd-daaf643e932c`.
-- Tenant: `0bf51094-2478-4975-9cbc-61fb8c649e62`.
-- Resource group: `rg-ppnatgw-demo`.
-- West Europe NAT public IP: `51.124.38.135`.
-- North Europe NAT public IP: `20.166.89.8`.
-- Enterprise policy ARM ID: `/subscriptions/3cce1c0d-4798-48da-92cd-daaf643e932c/resourceGroups/rg-ppnatgw-demo/providers/Microsoft.PowerPlatform/enterprisePolicies/ppnatgw-europe-policy`.
-- Power Platform environment ID: `f021725d-8eeb-e31b-9427-7334c58a3a5b`.
-- Environment URL: `https://orgdb8a7af5.crm4.dynamics.com/`.
+- Azure CLI authenticated as `<user-upn>`.
+- Subscription: `<azure-subscription-id>`.
+- Tenant: `<microsoft-entra-tenant-id>`.
+- Resource group: `<resource-group-name>`.
+- West Europe NAT public IP: `<west-region-nat-ip>`.
+- North Europe NAT public IP: `<north-region-nat-ip>`.
+- Enterprise policy ARM ID: `/subscriptions/<azure-subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.PowerPlatform/enterprisePolicies/<enterprise-policy-name>`.
+- Power Platform environment ID: `<power-platform-environment-id>`.
+- Environment URL: `https://<power-platform-environment-url>/`.
 - `Enable-SubnetInjection` completed successfully for the environment.
 - Destination-observed source IP proof is pending.

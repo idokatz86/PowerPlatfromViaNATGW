@@ -1,6 +1,6 @@
 # Power Platform Admin Handoff
 
-The Azure networking, Power Platform enterprise policy, and subnet injection binding for this proof are already deployed in the M365x06311682 tenant.
+The Azure networking, Power Platform enterprise policy, and subnet injection binding for this proof are already deployed in the <tenant-display-name> tenant.
 
 ## Request For Tenant Admin
 
@@ -8,8 +8,8 @@ The active Power Platform environment is:
 
 | Setting | Value |
 | --- | --- |
-| Environment ID | `f021725d-8eeb-e31b-9427-7334c58a3a5b` |
-| Environment URL | `https://orgdb8a7af5.crm4.dynamics.com/` |
+| Environment ID | `<power-platform-environment-id>` |
+| Environment URL | `https://<power-platform-environment-url>/` |
 | Type | `Sandbox` |
 | Environment group | `Fnx-mng` |
 
@@ -36,34 +36,34 @@ Subnet injection has already been enabled for the active environment.
 Subscription:
 
 ```text
-3cce1c0d-4798-48da-92cd-daaf643e932c
+<azure-subscription-id>
 ```
 
 Resource group:
 
 ```text
-rg-ppnatgw-demo
+<resource-group-name>
 ```
 
 Enterprise policy ARM ID:
 
 ```text
-/subscriptions/3cce1c0d-4798-48da-92cd-daaf643e932c/resourceGroups/rg-ppnatgw-demo/providers/Microsoft.PowerPlatform/enterprisePolicies/ppnatgw-europe-policy
+/subscriptions/<azure-subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.PowerPlatform/enterprisePolicies/<enterprise-policy-name>
 ```
 
 NAT Gateway public IPs:
 
 | Region | Public IP |
 | --- | --- |
-| West Europe | `51.124.38.135` |
-| North Europe | `20.166.89.8` |
+| West Europe | `<west-region-nat-ip>` |
+| North Europe | `<north-region-nat-ip>` |
 
 ## Resume Command
 
 The subnet injection binding has already succeeded. If it needs to be rerun, use:
 
 ```powershell
-./scripts/04-enable-subnet-injection.ps1 -EnvironmentId 'f021725d-8eeb-e31b-9427-7334c58a3a5b'
+./scripts/04-enable-subnet-injection.ps1 -EnvironmentId '<power-platform-environment-id>'
 ```
 
 Then continue with the proof workload and screenshot guide in [PROOF-GUIDE.md](PROOF-GUIDE.md).

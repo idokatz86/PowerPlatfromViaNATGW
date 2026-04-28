@@ -84,22 +84,22 @@ flowchart TD
 
 ```text
 NAT Proof Inspector custom connector
-  -> Power Platform environment f021725d-8eeb-e31b-9427-7334c58a3a5b
+  -> Power Platform environment <power-platform-environment-id>
   -> North Europe delegated connector runtime
-  -> NAT Gateway public IP 20.166.89.8
+  -> NAT Gateway public IP <north-region-nat-ip>
   -> France Central inspection endpoint
 ```
 
 ```text
 North Europe Logic App example
   -> North Europe Container Apps proxy
-  -> NAT Gateway public IP 20.166.89.8
+  -> NAT Gateway public IP <north-region-nat-ip>
   -> api.ipify.org and checkip.amazonaws.com
 ```
 
 ```text
 West Europe Logic App example
   -> West Europe Container Apps proxy
-  -> NAT Gateway public IP 51.124.38.135
+  -> NAT Gateway public IP <west-region-nat-ip>
   -> api.ipify.org and checkip.amazonaws.com
 ```

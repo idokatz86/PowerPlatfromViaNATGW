@@ -8,8 +8,8 @@ The current end-to-end capture is in [POWER-AUTOMATE-E2E-RESULTS.md](POWER-AUTOM
 
 | Region | Display name | Connector ID | Internal name | Proxy host |
 | --- | --- | --- | --- | --- |
-| North Europe | `NEU NAT Proxy` | `738e979f-4a43-f111-88b5-7ced8d76efb6` | `new_neu-20nat-20proxy` | `ppnatgw-proxy.yellowmeadow-5cf2ecd6.northeurope.azurecontainerapps.io` |
-| West Europe | `WEU NAT Proxy` | `411718a6-4a43-f111-88b5-7ced8d76efb6` | `new_weu-20nat-20proxy` | `ppnatgw-proxy-weu.orangesea-6ab30ac0.westeurope.azurecontainerapps.io` |
+| North Europe | `NEU NAT Proxy` | `738e979f-4a43-f111-88b5-7ced8d76efb6` | `new_neu-20nat-20proxy` | `<north-region-proxy-host>` |
+| West Europe | `WEU NAT Proxy` | `411718a6-4a43-f111-88b5-7ced8d76efb6` | `new_weu-20nat-20proxy` | `<west-region-proxy-host>` |
 
 Connector definitions are stored in:
 
@@ -27,8 +27,8 @@ North Europe branch:
 Manual trigger
   -> NEU NAT Proxy / Run both NAT proof checks
   -> Parse or store response
-  -> Validate ipify.observedIp == 20.166.89.8
-  -> Validate awsCheckIp.observedIp == 20.166.89.8
+  -> Validate ipify.observedIp == <north-region-nat-ip>
+  -> Validate awsCheckIp.observedIp == <north-region-nat-ip>
 ```
 
 West Europe branch:
@@ -37,13 +37,13 @@ West Europe branch:
 Manual trigger
   -> WEU NAT Proxy / Run both NAT proof checks
   -> Parse or store response
-  -> Validate ipify.observedIp == 51.124.38.135
-  -> Validate awsCheckIp.observedIp == 51.124.38.135
+  -> Validate ipify.observedIp == <west-region-nat-ip>
+  -> Validate awsCheckIp.observedIp == <west-region-nat-ip>
 ```
 
 The flow must not call `api.ipify.org`, `checkip.amazonaws.com`, or the AWS MCP endpoint directly. It calls the regional proxy connector only.
 
-If the customer chooses to use the built-in HTTP action instead of the custom connector, restrict the URI to the approved proxy hostnames only. The built-in action direct to `checkip.amazonaws.com` succeeded in the demo but returned `98.71.111.250`, so it is a functional path but not an enforced NAT path.
+If the customer chooses to use the built-in HTTP action instead of the custom connector, restrict the URI to the approved proxy hostnames only. The built-in action direct to `checkip.amazonaws.com` succeeded in the demo but returned `<built-in-http-direct-egress-ip>`, so it is a functional path but not an enforced NAT path.
 
 ## Enforcement Controls
 
@@ -54,7 +54,7 @@ Use Power Platform DLP and environment governance so makers can only use the app
 | Approved connectors | Put `NEU NAT Proxy` and `WEU NAT Proxy` in the Business connector group. |
 | Direct HTTP bypass | Block or isolate the built-in HTTP connector and any generic direct outbound connectors for this environment. |
 | Unapproved custom connectors | Require admin approval for new custom connectors and keep this solution in a controlled environment. |
-| AWS allowlist | Allow only `20.166.89.8` and `51.124.38.135` at AWS WAF/API Gateway/ALB/security controls. |
+| AWS allowlist | Allow only `<north-region-nat-ip>` and `<west-region-nat-ip>` at AWS WAF/API Gateway/ALB/security controls. |
 | Proxy authentication | Add APIM, OAuth, mTLS, or API-key protection before production use. The demo proxy is intentionally simple for proof. |
 
 ## Customer Message

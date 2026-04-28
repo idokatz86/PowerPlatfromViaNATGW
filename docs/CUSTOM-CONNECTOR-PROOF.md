@@ -2,28 +2,28 @@
 
 Use this proof path to avoid the built-in Power Automate HTTP action. The custom connector is a VNet-supported connector type, so calls from the VNet-enabled environment should use the delegated subnet path.
 
-## Target Environment
+## Environment
 
 | Item | Value |
 | --- | --- |
-| Environment ID | `f021725d-8eeb-e31b-9427-7334c58a3a5b` |
-| Environment URL | `https://orgdb8a7af5.crm4.dynamics.com/` |
-| Enterprise policy | `ppnatgw-europe-policy` |
+| Environment ID | `<power-platform-environment-id>` |
+| Environment URL | `https://<power-platform-environment-url>/` |
+| Enterprise policy | `<enterprise-policy-name>` |
 | Subnet injection | Enabled |
 
 ## Inspection Endpoint
 
 | Item | Value |
 | --- | --- |
-| Resource group | `rg-ppnatgw-inspection` |
+| Resource group | `<inspection-resource-group-name>` |
 | Region | `francecentral` |
-| Web App | `ppnatgw-inspect-frc-06311682` |
-| URL | `https://ppnatgw-inspect-frc-06311682.azurewebsites.net/inspect` |
+| Web App | `<inspection-web-app-name>` |
+| URL | `https://<inspection-web-app-host>/inspect` |
 
 Smoke test from a local machine:
 
 ```bash
-curl -sS 'https://ppnatgw-inspect-frc-06311682.azurewebsites.net/inspect?run=local-smoke' | jq
+curl -sS 'https://<inspection-web-app-host>/inspect?run=local-smoke' | jq
 ```
 
 The local smoke test only proves the endpoint is working. It is not the NAT proof.
@@ -52,16 +52,16 @@ Capture the connector test response body and the inspection Web App logs for eac
 A valid West Europe proof must show:
 
 ```text
-observedClientIp = 51.124.38.135
+observedClientIp = <west-region-nat-ip>
 ```
 
 A valid North Europe proof must show:
 
 ```text
-observedClientIp = 20.166.89.8
+observedClientIp = <north-region-nat-ip>
 ```
 
-A single call only proves the regional runtime that served that call. To claim both NAT Gateways are proven, capture two separate evidence rows: one matching `51.124.38.135` and one matching `20.166.89.8`.
+A single call only proves the regional runtime that served that call. To claim both NAT Gateways are proven, capture two separate evidence rows: one matching `<west-region-nat-ip>` and one matching `<north-region-nat-ip>`.
 
 ## View Destination Logs
 

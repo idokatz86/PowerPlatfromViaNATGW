@@ -21,7 +21,7 @@ Power Platform custom connector
 The destination observed:
 
 ```text
-observedClientIp = 20.166.89.8
+observedClientIp = <north-region-nat-ip>
 x-ms-subnet-delegation-enabled = true
 ```
 
@@ -31,8 +31,8 @@ This repository also proves a customer-controlled proxy path in both Europe regi
 
 | Region | Proxy path observed IP | Evidence |
 | --- | --- | --- |
-| North Europe | `20.166.89.8` | [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
-| West Europe | `51.124.38.135` | [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
+| North Europe | `<north-region-nat-ip>` | [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
+| West Europe | `<west-region-nat-ip>` | [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
 
 ## What This Solution Does Not Prove
 
@@ -90,8 +90,8 @@ This demo deployed both NAT Gateways:
 
 | Region | NAT Gateway public IP | Proof status |
 | --- | --- | --- |
-| West Europe | `51.124.38.135` | Configured, not yet destination-observed |
-| North Europe | `20.166.89.8` | Proven by `powerplatform-test-009` |
+| West Europe | `<west-region-nat-ip>` | Configured, not yet destination-observed |
+| North Europe | `<north-region-nat-ip>` | Proven by `powerplatform-test-009` |
 
 For the Container Apps proxy architecture, both regional NAT IPs are destination-observed and proven.
 

@@ -1,10 +1,10 @@
 targetScope = 'resourceGroup'
 
 @description('North Europe Logic App name.')
-param northEuropeWorkflowName string = 'ppnatgw-proxy-proof-neu-la'
+param northEuropeWorkflowName string = 'proxy-proof-region-1-la'
 
 @description('West Europe Logic App name.')
-param westEuropeWorkflowName string = 'ppnatgw-proxy-proof-weu-la'
+param westEuropeWorkflowName string = 'proxy-proof-region-2-la'
 
 @description('North Europe location.')
 param northEuropeLocation string = 'northeurope'

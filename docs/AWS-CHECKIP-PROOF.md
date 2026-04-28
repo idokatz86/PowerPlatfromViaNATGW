@@ -9,19 +9,19 @@ This is useful because the destination is AWS-hosted, which is closer to the fin
 The live Power Platform custom connector test completed successfully with HTTP `200`, but AWS checkip returned:
 
 ```text
-::ffff:20.86.93.37
+::ffff:<microsoft-managed-egress-ip>
 ```
 
 Normalized IPv4 value:
 
 ```text
-20.86.93.37
+<microsoft-managed-egress-ip>
 ```
 
 That IP is **not** one of the configured NAT Gateway public IPs for this demo:
 
-- North Europe NAT Gateway: `20.166.89.8`
-- West Europe NAT Gateway: `51.124.38.135`
+- North Europe NAT Gateway: `<north-region-nat-ip>`
+- West Europe NAT Gateway: `<west-region-nat-ip>`
 
 Classification: **not a valid NAT Gateway proof** for this run.
 
@@ -36,4 +36,4 @@ For the AWS MCP scenario, this result matters more than the `api.ipify.org` resu
 
 Before using AWS WAF, API Gateway, ALB, or application allowlists, the customer should deploy an AWS-side diagnostic endpoint and verify what AWS actually observes.
 
-If AWS observes `20.86.93.37`, then allowlisting only `20.166.89.8` and `51.124.38.135` will block the call.
+If AWS observes `<microsoft-managed-egress-ip>`, then allowlisting only `<north-region-nat-ip>` and `<west-region-nat-ip>` will block the call.

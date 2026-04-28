@@ -8,9 +8,9 @@ For customer-facing scope boundaries, read [LIMITATIONS.md](LIMITATIONS.md). The
 
 Capture each screenshot into `docs/images/` using the suggested file names.
 
-1. `01-azure-account.png` - Azure CLI or Azure portal showing subscription `3cce1c0d-4798-48da-92cd-daaf643e932c`.
-2. `02-resource-group.png` - Resource group `rg-ppnatgw-demo`.
-3. `03-vnets.png` - Two VNets: `ppnatgw-vnet-weu` in West Europe and `ppnatgw-vnet-neu` in North Europe.
+1. `01-azure-account.png` - Azure CLI or Azure portal showing subscription `<azure-subscription-id>`.
+2. `02-resource-group.png` - Resource group `<resource-group-name>`.
+3. `03-vnets.png` - Two VNets: `<west-region-vnet-name>` in West Europe and `<north-region-vnet-name>` in North Europe.
 4. `04-delegated-subnet-weu.png` - West Europe subnet delegated to `Microsoft.PowerPlatform/enterprisePolicies` with NAT Gateway associated.
 5. `05-delegated-subnet-neu.png` - North Europe subnet delegated to `Microsoft.PowerPlatform/enterprisePolicies` with NAT Gateway associated.
 6. `06-nat-public-ip.png` - NAT Gateway outbound IP page showing the static public IP address.
@@ -38,18 +38,18 @@ Expected result:
 
 Validated NAT public IPs for this deployment:
 
-- West Europe: `51.124.38.135`
-- North Europe: `20.166.89.8`
+- West Europe: `<west-region-nat-ip>`
+- North Europe: `<north-region-nat-ip>`
 
 Enterprise policy ARM ID:
 
 ```text
-/subscriptions/3cce1c0d-4798-48da-92cd-daaf643e932c/resourceGroups/rg-ppnatgw-demo/providers/Microsoft.PowerPlatform/enterprisePolicies/ppnatgw-europe-policy
+/subscriptions/<azure-subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.PowerPlatform/enterprisePolicies/<enterprise-policy-name>
 ```
 
 ## Current State
 
-Subnet injection is enabled for Power Platform environment `f021725d-8eeb-e31b-9427-7334c58a3a5b` at `https://orgdb8a7af5.crm4.dynamics.com/`. A VNet-supported custom connector test has proven the North Europe NAT Gateway path. The West Europe paired-region NAT proof is still pending because the test runs executed from the North Europe runtime path.
+Subnet injection is enabled for Power Platform environment `<power-platform-environment-id>` at `https://<power-platform-environment-url>/`. A VNet-supported custom connector test has proven the North Europe NAT Gateway path. The West Europe paired-region NAT proof is still pending because the test runs executed from the North Europe runtime path.
 
 ## Proof Workload
 
@@ -68,10 +68,10 @@ The active destination endpoint is an Azure Web App in a separate resource group
 
 | Item | Value |
 | --- | --- |
-| Resource group | `rg-ppnatgw-inspection` |
+| Resource group | `<inspection-resource-group-name>` |
 | Region | `francecentral` |
-| Web App | `ppnatgw-inspect-frc-06311682` |
-| URL | `https://ppnatgw-inspect-frc-06311682.azurewebsites.net/inspect` |
+| Web App | `<inspection-web-app-name>` |
+| URL | `https://<inspection-web-app-host>/inspect` |
 
 Use the custom connector proof steps in [CUSTOM-CONNECTOR-PROOF.md](CUSTOM-CONNECTOR-PROOF.md). The OpenAPI definition is [nat-proof-connector.swagger.json](../connectors/nat-proof-connector.swagger.json).
 
@@ -88,11 +88,11 @@ When complete, add the observed values below:
 
 | Item | Value |
 | --- | --- |
-| West Europe NAT Gateway public IP | `51.124.38.135` |
-| North Europe NAT Gateway public IP | `20.166.89.8` |
-| Power Platform environment ID | `f021725d-8eeb-e31b-9427-7334c58a3a5b` |
-| Enterprise policy ARM ID | `/subscriptions/3cce1c0d-4798-48da-92cd-daaf643e932c/resourceGroups/rg-ppnatgw-demo/providers/Microsoft.PowerPlatform/enterprisePolicies/ppnatgw-europe-policy` |
-| Destination observed source IP | `20.166.89.8` for run `powerplatform-test-009` |
+| West Europe NAT Gateway public IP | `<west-region-nat-ip>` |
+| North Europe NAT Gateway public IP | `<north-region-nat-ip>` |
+| Power Platform environment ID | `<power-platform-environment-id>` |
+| Enterprise policy ARM ID | `/subscriptions/<azure-subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.PowerPlatform/enterprisePolicies/<enterprise-policy-name>` |
+| Destination observed source IP | `<north-region-nat-ip>` for run `powerplatform-test-009` |
 | Result | North Europe NAT Gateway proof succeeded. West Europe proof pending. |
 
 ## Two NAT Gateway Proof Requirement
@@ -101,7 +101,7 @@ To prove both NAT Gateways, capture two separate successful Power Platform custo
 
 | Required proof row | Expected destination-observed source IP | Status |
 | --- | --- | --- |
-| West Europe delegated subnet egress | `51.124.38.135` | Pending |
-| North Europe delegated subnet egress | `20.166.89.8` | Proven by `powerplatform-test-009` |
+| West Europe delegated subnet egress | `<west-region-nat-ip>` | Pending |
+| North Europe delegated subnet egress | `<north-region-nat-ip>` | Proven by `powerplatform-test-009` |
 
 A single connector call only proves the regional Power Platform runtime path that handled that call. If the environment only executes from one region during normal operation, the second NAT Gateway proof requires a paired-region execution path, failover event, or support-guided validation. Do not mark both as proven until the destination endpoint actually observes both public IPs.

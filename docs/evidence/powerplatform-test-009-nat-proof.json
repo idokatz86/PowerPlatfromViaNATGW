@@ -1,18 +1,18 @@
 {
   "timestamp": "2026-04-28T20:20:21.854Z",
   "run": "powerplatform-test-009",
-  "powerPlatformEnvironmentId": "f021725d-8eeb-e31b-9427-7334c58a3a5b",
-  "inspectionEndpoint": "https://ppnatgw-inspect-frc-06311682.azurewebsites.net/inspect",
-  "observedClientIp": "20.166.89.8",
-  "rawObservedClientIp": "20.166.89.8:50750",
-  "appServiceClientIp": "20.166.89.8:50750",
-  "xForwardedFor": "::ffff:20.86.93.37, 20.166.89.8:50750",
+  "powerPlatformEnvironmentId": "<power-platform-environment-id>",
+  "inspectionEndpoint": "https://<inspection-web-app-host>/inspect",
+  "observedClientIp": "<north-region-nat-ip>",
+  "rawObservedClientIp": "<north-region-nat-ip>:50750",
+  "appServiceClientIp": "<north-region-nat-ip>:50750",
+  "xForwardedFor": "::ffff:<microsoft-managed-egress-ip>, <north-region-nat-ip>:50750",
   "xMsSubnetDelegationEnabled": "true",
   "xForwardedHost": "sbx.neu-il109.gateway.prod.island.powerapps.com",
   "matchedNatGateway": {
     "region": "northeurope",
-    "publicIp": "20.166.89.8",
-    "natGatewayName": "ppnatgw-nat-neu"
+    "publicIp": "<north-region-nat-ip>",
+    "natGatewayName": "<north-region-nat-gateway-name>"
   },
   "result": "Power Platform custom connector egress matched the North Europe NAT Gateway public IP."
 }

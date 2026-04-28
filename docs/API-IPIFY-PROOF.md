@@ -6,7 +6,7 @@ The expected response shape is:
 
 ```json
 {
-  "ip": "20.166.89.8"
+  "ip": "<north-region-nat-ip>"
 }
 ```
 
@@ -14,8 +14,8 @@ The expected response shape is:
 
 | Result from `api.ipify.org` | Meaning | Scenario classification |
 | --- | --- | --- |
-| `20.166.89.8` | The request used the North Europe NAT Gateway public IP from this demo | Working scenario |
-| `51.124.38.135` | The request used the West Europe NAT Gateway public IP from this demo | Working scenario |
+| `<north-region-nat-ip>` | The request used the North Europe NAT Gateway public IP from this demo | Working scenario |
+| `<west-region-nat-ip>` | The request used the West Europe NAT Gateway public IP from this demo | Working scenario |
 | Any other Microsoft-owned public IP | The request did not prove the configured NAT Gateway path | Not working or not guaranteed |
 | Customer office, VPN, or local machine IP | The call was not made by the Power Platform connector runtime | Invalid proof path |
 | No response, DNS failure, 403, or timeout | The destination could not be reached or the connector runtime failed | Troubleshoot before classifying |
@@ -32,14 +32,14 @@ The live Power Platform custom connector test completed successfully with HTTP `
 
 ```json
 {
-  "ip": "20.86.93.37"
+  "ip": "<microsoft-managed-egress-ip>"
 }
 ```
 
 That IP is **not** one of the configured NAT Gateway public IPs for this demo:
 
-- North Europe NAT Gateway: `20.166.89.8`
-- West Europe NAT Gateway: `51.124.38.135`
+- North Europe NAT Gateway: `<north-region-nat-ip>`
+- West Europe NAT Gateway: `<west-region-nat-ip>`
 
 Classification: **not a valid NAT Gateway proof** for this flow.
 
@@ -48,4 +48,4 @@ Evidence:
 - [evidence/api-ipify-nat-proof-2026-04-28.json](evidence/api-ipify-nat-proof-2026-04-28.json)
 - [screenshots/api-ipify-nat-proof-2026-04-28.png](screenshots/api-ipify-nat-proof-2026-04-28.png)
 
-This does not change the earlier Azure inspection endpoint proof, where the destination observed the North Europe NAT Gateway IP `20.166.89.8`. It means `api.ipify.org` is useful as a customer-friendly smoke test only if its returned `ip` equals one of the expected NAT Gateway public IPs.
+This does not change the earlier Azure inspection endpoint proof, where the destination observed the North Europe NAT Gateway IP `<north-region-nat-ip>`. It means `api.ipify.org` is useful as a customer-friendly smoke test only if its returned `ip` equals one of the expected NAT Gateway public IPs.

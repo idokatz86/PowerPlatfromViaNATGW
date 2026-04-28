@@ -6,8 +6,8 @@ This example deploys two Logic App Consumption workflows. Each workflow calls on
 
 | Region | Workflow | Proxy URL | Expected observed IP | Evidence |
 | --- | --- | --- | --- | --- |
-| North Europe | `ppnatgw-proxy-proof-neu-la` | `https://ppnatgw-proxy.yellowmeadow-5cf2ecd6.northeurope.azurecontainerapps.io` | `20.166.89.8` | [logicapp-proxy-neu-2026-04-28.json](evidence/logicapp-proxy-neu-2026-04-28.json) |
-| West Europe | `ppnatgw-proxy-proof-weu-la` | `https://ppnatgw-proxy-weu.orangesea-6ab30ac0.westeurope.azurecontainerapps.io` | `51.124.38.135` | [logicapp-proxy-weu-2026-04-28.json](evidence/logicapp-proxy-weu-2026-04-28.json) |
+| North Europe | `<north-region-container-app-name>-proof-neu-la` | `https://<north-region-proxy-host>` | `<north-region-nat-ip>` | [logicapp-proxy-neu-2026-04-28.json](evidence/logicapp-proxy-neu-2026-04-28.json) |
+| West Europe | `<north-region-container-app-name>-proof-weu-la` | `https://<west-region-proxy-host>` | `<west-region-nat-ip>` | [logicapp-proxy-weu-2026-04-28.json](evidence/logicapp-proxy-weu-2026-04-28.json) |
 
 ## Deploy And Test
 

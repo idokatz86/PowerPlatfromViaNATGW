@@ -1,9 +1,19 @@
 param(
-    [string]$SubscriptionId = "152f2bd5-8f6b-48ba-a702-21a23172a224",
-    [string]$TenantId = "16b3c013-d300-468d-ac64-7eda0820b6d3",
-    [string]$ResourceGroupName = "rg-ppnatgw-demo",
-    [string]$PolicyName = "ppnatgw-europe-policy",
-    [string]$PolicyLocation = "europe",
+    [Parameter(Mandatory = $true)]
+    [string]$SubscriptionId,
+
+    [Parameter(Mandatory = $true)]
+    [string]$TenantId,
+
+    [Parameter(Mandatory = $true)]
+    [string]$ResourceGroupName,
+
+    [Parameter(Mandatory = $true)]
+    [string]$PolicyName,
+
+    [Parameter(Mandatory = $true)]
+    [string]$PolicyLocation,
+
     [string]$NetworkOutputsPath = ".azure/network-outputs.json"
 )
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SUBSCRIPTION_ID="${SUBSCRIPTION_ID:-152f2bd5-8f6b-48ba-a702-21a23172a224}"
+source "$(dirname "$0")/lib/common.sh"
 
-az account set --subscription "$SUBSCRIPTION_ID"
+set_subscription
 
 echo "Azure account:"
 az account show --query '{subscription:id,name:name,tenantId:tenantId,user:user.name}' -o table

@@ -1,266 +1,330 @@
 # PowerPlatfromViaNATGW
 
-End-to-end deployment assets for proving that a Power Platform environment using virtual network support exits to the internet through an Azure NAT Gateway public IP.
+Customer-ready reference implementation for deterministic outbound access from Power Platform or Logic Apps to an external service such as an AWS-hosted MCP endpoint.
+
+The repository shows why a NAT Gateway alone is not enough for every Power Platform path, and how to enforce a customer-controlled egress hop with Azure Container Apps, NAT Gateway, Power Platform DLP, and destination-side allowlisting.
 
 > The repository name intentionally follows the requested spelling: `PowerPlatfromViaNATGW`.
 
-## Target
+## What This Solves
 
-- Azure subscription: `3cce1c0d-4798-48da-92cd-daaf643e932c`
-- Azure tenant: `0bf51094-2478-4975-9cbc-61fb8c649e62`
-- Power Platform environment ID: `f021725d-8eeb-e31b-9427-7334c58a3a5b`
-- Power Platform environment URL: `https://orgdb8a7af5.crm4.dynamics.com/`
-- Power Platform geography: Europe
-- Required Azure regions for Europe: `westeurope`, `northeurope`
-- Enterprise policy location: `europe`
+Some integrations require the destination to see a fixed, customer-owned public IP. A common example is an AWS endpoint that only allows traffic from approved source IP addresses.
 
-## Architecture
+Azure NAT Gateway can provide fixed outbound public IPs for workloads that run in an Azure subnet. The important limitation is that not every Power Platform or Logic Apps call runs inside your subnet. A built-in Power Automate HTTP action or managed connector can egress from Microsoft-managed connector infrastructure instead of from your NAT Gateway.
 
-The Europe geography requires paired virtual networks/subnets. This repo creates:
-
-- Resource group `rg-ppnatgw-demo`
-- West Europe VNet `ppnatgw-vnet-weu`
-- North Europe VNet `ppnatgw-vnet-neu`
-- One delegated `/24` subnet per VNet: `snet-powerplatform-delegated`
-- NAT Gateway on each delegated subnet
-- Standard static public IP for each NAT Gateway
-- VNet peering between the two regional VNets
-- Power Platform enterprise policy and environment linkage scripts
-
-## Why Two NAT Gateways?
-
-Microsoft maps the Power Platform Europe region to both `westeurope` and `northeurope`. The enterprise policy for a two-region geography references both delegated subnets. To keep outbound egress deterministic from either regional runtime, each delegated subnet has its own NAT Gateway and static public IP.
-
-## How Egress Is Forced
-
-For VNet-supported Power Platform workloads, the workload container is injected into the delegated subnet and receives an IP from that subnet. Azure NAT Gateway is associated directly to that delegated subnet, so internet-destined traffic from the injected workload uses the NAT Gateway as the outbound path and is source-translated to the NAT Gateway public IP.
-
-This only applies to traffic that actually executes inside the VNet-supported delegated subnet path. It does not automatically force every Power Platform or connector gateway path through the customer NAT Gateway. A regular built-in Power Automate HTTP action, Logic Apps action, or managed connector gateway path can still egress from Microsoft-managed service IPs, so those paths must not be used as deterministic NAT proof.
-
-If the customer requirement is **all AWS-bound traffic must be seen by AWS as a customer-controlled static IP**, use a customer-controlled Azure egress hop between Power Platform and AWS:
+The reliable pattern is to make Power Platform or Logic Apps call an approved proxy endpoint, then let that proxy make the AWS-facing request from a subnet that has NAT Gateway or Azure Firewall attached.
 
 ```text
-Power App / Power Automate flow
-	-> VNet-supported custom connector
-	-> customer-controlled Azure proxy/API endpoint
-	-> proxy subnet with NAT Gateway or Azure Firewall
-	-> AWS-hosted MCP endpoint
+Power Automate / Power Apps / Logic Apps
+  -> approved regional proxy endpoint
+  -> customer-controlled Azure workload in a VNet
+  -> NAT Gateway or Azure Firewall
+  -> AWS MCP endpoint or public destination
 ```
 
-That proxy can be Azure API Management in VNet mode, Azure Container Apps with VNet integration, Azure Functions Premium with VNet integration, App Service with VNet integration, AKS, or another customer-managed API gateway. In that model, AWS allowlists the public IP of the proxy egress path, not an opaque Power Platform connector gateway IP.
+## Why NAT Gateway Alone Is Not Enough
 
-This repo now includes a validated Azure Container Apps implementation of that proxy pattern:
+NAT Gateway controls outbound SNAT for resources that actually send traffic from the associated Azure subnet.
 
-| Region | Proxy URL | NAT Gateway public IP | Proof result |
+Power Platform virtual network support can place supported Power Platform workloads into delegated subnets, but it does not transparently force every connector, built-in HTTP action, or managed service hop through that subnet. Direct public tests can succeed while the destination sees a Microsoft-managed source IP instead of the NAT Gateway IP.
+
+For customer enforcement, three things must be true at the same time:
+
+| Requirement | Why it matters |
+| --- | --- |
+| The AWS-facing request must originate from a customer-controlled Azure subnet | This is what NAT Gateway or Azure Firewall can govern. |
+| Power Platform and Logic Apps must be restricted to approved proxy paths | Otherwise makers can bypass the proxy with direct HTTP or unapproved connectors. |
+| The destination must deny every non-approved source IP | AWS allowlisting is the final enforcement point. |
+
+## Reference Architecture
+
+```text
+Maker app or workflow
+  -> approved custom connector or approved HTTP action URI
+  -> regional Container Apps proxy
+  -> proxy subnet associated with NAT Gateway
+  -> external destination
+```
+
+This repo uses Azure Container Apps for the proxy because it is small, repeatable, container-native, and easy to deploy into a workload profile environment connected to a VNet. The proxy performs the outbound request and returns the destination-observed source IP for proof.
+
+## Components And Why They Are Used
+
+| Component | Purpose | Why it is included |
+| --- | --- | --- |
+| Azure Virtual Network | Hosts delegated subnets and proxy subnets | Gives the customer a network boundary that can be governed. |
+| Power Platform delegated subnet | Enables supported Power Platform virtual network paths | Required for Power Platform VNet support scenarios. |
+| NAT Gateway | Provides stable public outbound IPs for subnet-based traffic | Simple fixed egress for internet-bound traffic. |
+| Static Public IP | The address the destination can allowlist | Gives AWS a stable source IP to trust. |
+| Azure Container Apps proxy | Makes the AWS-facing request from inside the VNet | Provides deterministic egress even when Power Automate itself is not subnet-bound. |
+| Azure Container Registry | Stores the proxy container image | Keeps the image in the customer's Azure boundary. |
+| Log Analytics | Stores Container Apps logs | Supports day 2 diagnostics and operational review. |
+| Power Platform custom connector | Gives makers a controlled action instead of arbitrary HTTP | Easier to govern with DLP and environment controls. |
+| Logic Apps example | Shows the same proxy-only pattern for Logic Apps | Logic Apps also need explicit routing through the proxy unless using their own VNet-integrated hosting pattern. |
+
+## Why Container Apps Was Chosen
+
+Container Apps is a good default for this proof because the proxy is a small HTTP service that needs external ingress, VNet integration, simple scaling, and low operational overhead.
+
+| Option | Pros | Cons | Good fit when |
 | --- | --- | --- | --- |
-| North Europe | `https://ppnatgw-proxy.yellowmeadow-5cf2ecd6.northeurope.azurecontainerapps.io` | `20.166.89.8` | `api.ipify.org` and `checkip.amazonaws.com` both observed `20.166.89.8` |
-| West Europe | `https://ppnatgw-proxy-weu.orangesea-6ab30ac0.westeurope.azurecontainerapps.io` | `51.124.38.135` | `api.ipify.org` and `checkip.amazonaws.com` both observed `51.124.38.135` |
+| Azure Container Apps | Simple container deployment, VNet integration, scale controls, easy revision rollback | Requires Container Apps environment subnet; production ingress/auth must be designed | You need a lightweight API proxy quickly. |
+| Azure API Management | Strong policy layer, auth, rate limiting, transformation, central API governance | Higher cost and more configuration; VNet mode needs planning | You need enterprise API governance or many integrations. |
+| Azure Functions Premium | Good for code-first proxy logic, VNet integration, managed identity | Hosting/runtime behavior must be tuned for latency and scale | You want event/function style code with minimal container work. |
+| App Service with VNet integration | Familiar web app hosting, deployment slots, easy operations | Outbound VNet/NAT behavior must be configured carefully; not as container-native | Your team already standardizes on App Service. |
+| AKS | Maximum control and platform consistency for Kubernetes teams | Highest operational overhead | The customer already runs a Kubernetes platform. |
+| Logic Apps Standard with VNet integration | Workflow runtime can be placed in an Azure networking model | Different architecture from Power Automate cloud flows; requires Standard hosting | The integration should be workflow-native but Azure-hosted. |
+| Azure Firewall instead of NAT Gateway | Egress logging, FQDN filtering, policy, threat intelligence | More expensive and more operationally involved | The customer needs inspectable outbound policy, not only stable SNAT. |
 
-See [docs/CONTAINER-APPS-PROXY-PROOF.md](docs/CONTAINER-APPS-PROXY-PROOF.md) for the evidence.
+## Customer Step-By-Step
 
-## Prerequisites
+### 1. Confirm The Required Decisions
 
-### Power Platform Environment And Licensing
+Before deployment, the customer must choose:
 
-- The Power Platform environment must be a **Managed Environment**. Power Platform virtual network support cannot be enabled on a non-managed environment.
-- The environment must be in a Power Platform geography that supports virtual network support. This demo uses Europe, which maps to Azure `westeurope` and `northeurope`.
-- The Azure subscription used for the VNets, delegated subnets, and enterprise policy must be associated with the same Power Platform tenant/geography requirements.
-- The environment needs Dataverse and must be eligible for custom connectors or Dataverse plug-ins, depending on the proof workload.
-- Users in the environment where virtual network support is enabled need licensing that includes the required Power Platform security/governance entitlement. Microsoft documents VNet support licensing under Power Platform security and governance licensing requirements. Examples include Microsoft 365 or Office 365 A5/E5/G5, Microsoft 365 A5/E5/F5/G5 Compliance, Microsoft 365 F5 Security & Compliance, Microsoft 365 E5/F5/G5 Information Protection and Governance, or Microsoft 365 E5/F5/G5 Insider Risk Management.
-- Managed Environments entitlement is included with licenses such as Power Apps Premium, Power Apps per app, Power Automate Premium, Power Automate Process, Power Automate Hosted Process, Power Automate per user/per flow, Microsoft Copilot Studio, Power Pages user licenses, and Dynamics 365 Premium/Enterprise/Team Members licenses. Confirm the exact customer entitlement with the customer's licensing team before production rollout.
+| Decision | Customer input |
+| --- | --- |
+| Azure subscription and tenant | Where the Azure resources will be deployed. |
+| Power Platform environment | Existing managed environment or a new environment. |
+| Power Platform geography | Determines the required paired Azure regions. |
+| Regional VNet address spaces | Must not overlap with existing networks. |
+| Public egress strategy | NAT Gateway for fixed IP only, or Azure Firewall for inspection and policy. |
+| Proxy runtime | Container Apps by default, or APIM/Functions/App Service/AKS/Logic Apps Standard. |
+| AWS enforcement point | WAF, API Gateway resource policy, ALB, security group, firewall, or application allowlist. |
 
-### Roles And Permissions
+### 2. Configure Local Tools
 
-- Azure permissions to create resource groups, VNets, subnets, subnet delegations, public IPs, NAT Gateways, VNet peerings, App Service resources, and Power Platform enterprise policy resources.
-- Azure Network Contributor or equivalent custom role is recommended for the networking deployment.
-- Power Platform administrator, Dynamics 365 administrator, or Global administrator role is required to create/bind the Power Platform enterprise policy and enable virtual network support.
-- Environment admin rights are required for the target environment and custom connector setup.
-- AWS permissions are required only if the customer will update AWS allowlists, WAF rules, API Gateway resource policies, security groups, or deploy the optional MCP ingress probe.
+Install or validate:
 
-### Local Tooling
+- Azure CLI
+- PowerShell 7
+- Power Platform CLI (`pac`)
+- `jq`
+- `zip`
+- Docker tooling only if the customer wants to build images locally; the provided script uses ACR build.
 
-- Azure CLI authenticated to the target subscription.
-- PowerShell 7 for the `Microsoft.PowerPlatform.EnterprisePolicies` module.
-- Power Platform CLI (`pac`) authenticated to the target tenant/environment.
-- `zip` and `jq` for packaging and validation scripts.
-- GitHub CLI authenticated only if you want to create or push the repository from the command line.
+Authenticate to Azure and Power Platform using the customer's tenant and environment.
 
-## Deployment Flow
+### 3. Provide Customer Values
 
-For a customer-facing walkthrough, start with [docs/CUSTOMER-STEP-BY-STEP.md](docs/CUSTOMER-STEP-BY-STEP.md).
+Copy [.env.example](.env.example), fill in customer-specific values, and export them in the shell that will run the scripts. Do not commit a populated `.env` file.
 
-To run the deployment as one guided automation, export the required values and run:
+At minimum, provide:
 
 ```bash
-export SUBSCRIPTION_ID='<subscription-id>'
-export TENANT_ID='<tenant-id>'
-export POWER_PLATFORM_ENVIRONMENT_ID='<environment-id>'
-./scripts/09-run-customer-automation.sh
+export SUBSCRIPTION_ID='<azure-subscription-id>'
+export TENANT_ID='<microsoft-entra-tenant-id>'
+export POWER_PLATFORM_ENVIRONMENT_ID='<power-platform-environment-id>'
+export RESOURCE_GROUP='<resource-group-name>'
+export LOCATION='<primary-azure-region>'
+export POLICY_NAME='<enterprise-policy-name>'
+export POLICY_LOCATION='<power-platform-policy-location>'
 ```
 
-The individual steps are listed below for review and troubleshooting.
+### 4. Review Network Parameters
+
+Edit [infra/main.parameters.json](infra/main.parameters.json) for the customer's naming prefix, regions, VNet address spaces, and delegated subnet prefixes.
+
+The delegated Power Platform subnets and the Container Apps proxy subnets must be different subnets. Do not reuse the Power Platform delegated subnet for the Container Apps environment.
+
+### 5. Deploy The Network And Enterprise Policy
+
+Run provider registration and network deployment:
 
 ```bash
 ./scripts/00-prereqs.sh
 ./scripts/01-deploy-network.sh
 ```
 
-Then create the enterprise policy:
+Create the Power Platform enterprise policy:
 
 ```powershell
-./scripts/02-create-enterprise-policy.ps1
+pwsh -NoProfile -File ./scripts/02-create-enterprise-policy.ps1 \
+  -SubscriptionId "$SUBSCRIPTION_ID" \
+  -TenantId "$TENANT_ID" \
+  -ResourceGroupName "$RESOURCE_GROUP" \
+  -PolicyName "$POLICY_NAME" \
+  -PolicyLocation "$POLICY_LOCATION" \
+  -NetworkOutputsPath '.azure/network-outputs.json'
 ```
 
-Create a Power Platform environment if one does not already exist:
-
-```bash
-./scripts/03-create-power-platform-environment.sh
-```
-
-This deployment now uses an existing Sandbox environment in the same tenant. If you need to recreate the environment later, use the values in [docs/ADMIN-HANDOFF.md](docs/ADMIN-HANDOFF.md).
-
-Enable virtual network support for the environment:
+Enable virtual network support for the target Power Platform environment:
 
 ```powershell
-./scripts/04-enable-subnet-injection.ps1 -EnvironmentId 'f021725d-8eeb-e31b-9427-7334c58a3a5b'
+pwsh -NoProfile -File ./scripts/04-enable-subnet-injection.ps1 \
+  -EnvironmentId "$POWER_PLATFORM_ENVIRONMENT_ID"
 ```
 
-Validate Azure networking:
+Validate the Azure side:
 
 ```bash
 ./scripts/05-verify-azure-network.sh
 ```
 
-Deploy the customer-controlled Container Apps proxy in each region:
+### 6. Deploy Regional Proxies
+
+Run [scripts/10-deploy-container-apps-proxy.sh](scripts/10-deploy-container-apps-proxy.sh) once per required region. Set the `PROXY_*` variables for the region before each run.
+
+Example shape:
 
 ```bash
+export PROXY_RESOURCE_GROUP="$RESOURCE_GROUP"
+export PROXY_LOCATION='<azure-region>'
+export PROXY_VNET_NAME='<vnet-name>'
+export PROXY_SUBNET_NAME='<container-apps-subnet-name>'
+export PROXY_SUBNET_PREFIX='<container-apps-subnet-prefix>'
+export PROXY_NAT_NAME='<nat-gateway-name>'
+export PROXY_PUBLIC_IP_NAME='<nat-public-ip-resource-name>'
+export PROXY_LOG_ANALYTICS_NAME='<log-analytics-workspace-name>'
+export PROXY_CONTAINER_ENV_NAME='<container-apps-environment-name>'
+export PROXY_CONTAINER_APP_NAME='<container-app-name>'
+export PROXY_ACR_NAME='<globally-unique-acr-name>'
+export PROXY_OUTPUT_PATH='.azure/container-apps-proxy-<region>.json'
+
 ./scripts/10-deploy-container-apps-proxy.sh
-
-PROXY_LOCATION=westeurope \
-PROXY_VNET_NAME=ppnatgw-vnet-weu \
-PROXY_SUBNET_PREFIX=10.42.10.0/23 \
-PROXY_NAT_NAME=ppnatgw-nat-weu \
-PROXY_PUBLIC_IP_NAME=ppnatgw-pip-weu \
-PROXY_LOG_ANALYTICS_NAME=ppnatgw-proxy-law-weu \
-PROXY_CONTAINER_ENV_NAME=ppnatgw-proxy-env-weu \
-PROXY_CONTAINER_APP_NAME=ppnatgw-proxy-weu \
-PROXY_ACR_NAME=ppnatgwproxyweu06311682 \
-PROXY_OUTPUT_PATH=.azure/container-apps-proxy-weu.json \
-./scripts/10-deploy-container-apps-proxy.sh
 ```
 
-Deploy and test the Logic App examples that call only the regional proxy endpoints:
+The script outputs the proxy URL and verifies `/health`, `/proxy/ipify`, and `/proxy/aws-checkip`.
 
-```bash
-./scripts/11-deploy-logicapp-proxy-example.sh
-```
+### 7. Create Power Platform Connectors Or Restrict Built-In HTTP
 
-## Proof
-
-Use a VNet-supported Power Platform custom connector or Dataverse plug-in to call a request-inspection endpoint. The destination must observe the same source IP as the NAT Gateway public IP for the regional subnet used by the workload.
-
-The active inspection endpoint is deployed as an Azure Web App outside the Power Platform network resource group and outside West Europe/North Europe:
+Preferred Power Automate pattern:
 
 ```text
-https://ppnatgw-inspect-frc-06311682.azurewebsites.net/inspect
+Power Automate flow
+  -> approved custom connector for the regional proxy
+  -> proxy
+  -> NAT Gateway
+  -> AWS
 ```
 
-Use [docs/CUSTOM-CONNECTOR-PROOF.md](docs/CUSTOM-CONNECTOR-PROOF.md) and [connectors/nat-proof-connector.swagger.json](connectors/nat-proof-connector.swagger.json) for the custom connector proof path.
-
-Confirmed result: Power Platform custom connector run `powerplatform-test-009` exited through the North Europe NAT Gateway public IP `20.166.89.8`. See [docs/NAT-PROOF-RESULTS.md](docs/NAT-PROOF-RESULTS.md).
-
-Important follow-up tests against public IP echo services showed different behavior:
-
-| Public echo destination | Observed IP | Classification |
-| --- | --- | --- |
-| `api.ipify.org` | `20.86.93.37` | Not a valid NAT Gateway proof |
-| `checkip.amazonaws.com` | `20.86.93.37` | Not a valid NAT Gateway proof |
-
-Those results mean the public connector gateway path reached the internet, but those destinations did not see the configured NAT Gateway IPs. For AWS MCP, the customer must validate the final observed source IP from AWS-side logs before locking down source IP allowlists.
-
-The proxy pattern was then validated successfully against those same public echo destinations:
-
-| Proxy path | `api.ipify.org` observed IP | `checkip.amazonaws.com` observed IP | Classification |
-| --- | --- | --- | --- |
-| North Europe Container Apps proxy | `20.166.89.8` | `20.166.89.8` | Valid NAT proof |
-| West Europe Container Apps proxy | `51.124.38.135` | `51.124.38.135` | Valid NAT proof |
-
-Logic App examples that call only those proxy endpoints were also deployed and validated. See [docs/LOGIC-APP-PROXY-EXAMPLE.md](docs/LOGIC-APP-PROXY-EXAMPLE.md).
-
-See [docs/PROOF-GUIDE.md](docs/PROOF-GUIDE.md) for the step-by-step screenshot and evidence checklist.
-
-## Architecture And Flow
-
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) describes the deployed Azure/Power Platform architecture.
-- [docs/APPLICATION-FLOW.md](docs/APPLICATION-FLOW.md) describes the runtime request flow and proof flow.
-- [docs/AWS-MCP-INTEGRATION.md](docs/AWS-MCP-INTEGRATION.md) explains how to connect the final Power App/custom connector flow to an AWS-hosted MCP endpoint and what AWS must allow.
-- [docs/LIMITATIONS.md](docs/LIMITATIONS.md) states the customer-facing limitations and expectations.
-- [docs/SCENARIOS.md](docs/SCENARIOS.md) lists working scenarios versus not working or not guaranteed scenarios.
-- [docs/API-IPIFY-PROOF.md](docs/API-IPIFY-PROOF.md) shows how to interpret an `api.ipify.org` proof response. In the captured demo, `api.ipify.org` returned `20.86.93.37`, so it is documented as **not a valid NAT Gateway proof** for this run.
-- [docs/CONNECTOR-GATEWAY-BEHAVIOR.md](docs/CONNECTOR-GATEWAY-BEHAVIOR.md) explains why connector tests can succeed while still showing a Microsoft-managed egress IP instead of the NAT Gateway IP.
-- [docs/AWS-CHECKIP-PROOF.md](docs/AWS-CHECKIP-PROOF.md) records the AWS-hosted `checkip.amazonaws.com` test. It also returned `20.86.93.37`, so AWS-side allowlisting must be validated with destination logs before assuming the NAT Gateway IPs are observed.
-- [docs/CONTAINER-APPS-PROXY-PROOF.md](docs/CONTAINER-APPS-PROXY-PROOF.md) records the two-region customer-controlled proxy proof.
-- [docs/POWER-AUTOMATE-PROXY-EXAMPLE.md](docs/POWER-AUTOMATE-PROXY-EXAMPLE.md) describes the regional Power Automate proxy connector example.
-- [docs/POWER-AUTOMATE-E2E-RESULTS.md](docs/POWER-AUTOMATE-E2E-RESULTS.md) records the end-to-end Power Automate tests for custom connectors, built-in HTTP direct calls, and built-in HTTP calls through the regional proxies.
-- [docs/LOGIC-APP-PROXY-EXAMPLE.md](docs/LOGIC-APP-PROXY-EXAMPLE.md) describes the deployed Logic App regional proxy examples.
-- [docs/REGIONAL-PROXY-ENFORCEMENT.md](docs/REGIONAL-PROXY-ENFORCEMENT.md) explains how to enforce the proxy architecture and what remains out of scope.
-
-## AWS MCP Diagnostic Tool
-
-If the final AWS MCP call fails, use [tools/mcp-ingress-probe](tools/mcp-ingress-probe) as a temporary AWS-side diagnostic service. It returns the source IP and forwarding headers seen by the AWS ingress path, which helps separate Azure/Power Platform egress issues from AWS WAF, security group, API Gateway, ALB, or application allowlist issues.
-
-## Important Notes
-
-Read [docs/LIMITATIONS.md](docs/LIMITATIONS.md) before using this design with a customer. The short version is below.
-For a practical customer decision matrix, read [docs/SCENARIOS.md](docs/SCENARIOS.md).
-
-The successful proof in this repository used a Power Platform custom connector, not the normal built-in Power Automate HTTP action.
-
-This distinction matters:
-
-| Workload path | Can this design force egress through the customer NAT Gateway? | Notes |
-| --- | --- | --- |
-| VNet-supported Power Platform custom connector | Yes | Proven by run `powerplatform-test-009`, where the destination observed `20.166.89.8`. |
-| Dataverse plug-in using the VNet-supported path | Yes, expected | Use the same destination-side proof pattern to validate. |
-| Built-in Power Automate HTTP action direct to AWS/public destination | No | End-to-end test succeeded functionally, but AWS observed `98.71.111.250`, not either NAT Gateway IP. |
-| Built-in Power Automate HTTP action to approved regional proxy | Yes for the AWS-facing leg | The HTTP action reaches the proxy; the proxy reaches AWS through NAT Gateway. |
-| Built-in Logic Apps action | No, not by this Power Platform VNet injection design | Logic Apps has its own networking patterns; this repo does not force Logic Apps egress through this NAT Gateway. |
-
-For the customer AWS MCP scenario, there are two patterns to understand.
-
-Direct connector-to-AWS pattern:
-
-```text
-Power App / Power Automate flow
-	-> VNet-supported custom connector
-	-> Power Platform delegated subnet
-	-> Azure NAT Gateway public IP
-	-> AWS-hosted MCP endpoint
-```
-
-This is the original target pattern, but the public echo tests showed `20.86.93.37` instead of the NAT Gateway IPs. Do not treat this path as fully enforced for AWS until AWS-side logs prove the NAT Gateway IP is observed.
-
-Recommended deterministic AWS egress pattern:
-
-```text
-Power App / Power Automate flow
-	-> VNet-supported custom connector
-	-> customer-controlled Azure proxy/API
-	-> proxy subnet with NAT Gateway or Azure Firewall
-	-> AWS-hosted MCP endpoint
-```
-
-This pattern is enforceable because the AWS-facing request is made by a workload running in a customer-controlled Azure subnet. Attach NAT Gateway for stable SNAT, or use Azure Firewall when the customer needs egress logging, FQDN filtering, and policy control.
-
-For production enforcement, combine the proxy with Power Platform DLP, environment controls, Azure deployment guardrails, proxy authentication, and AWS deny-by-default allowlisting. The proxy is an explicit API hop. It does not transparently intercept every possible Power Platform or Logic Apps outbound request.
-
-The pattern to avoid for deterministic NAT egress is:
+Alternative Power Automate pattern:
 
 ```text
 Power Automate built-in HTTP action
-	-> AWS-hosted MCP endpoint
+  -> approved regional proxy URL only
+  -> proxy
+  -> NAT Gateway
+  -> AWS
 ```
 
-That path does not prove or guarantee egress from the Azure NAT Gateway public IP.
+Do not approve this pattern as NAT-controlled:
 
-These resources incur Azure cost while deployed, especially NAT Gateway and static public IP resources. Delete the resource group after the proof if you no longer need it.
+```text
+Power Automate built-in HTTP action
+  -> AWS directly
+```
+
+It can work functionally while the destination sees a Microsoft-managed source IP instead of the customer NAT IP.
+
+To generate and create/update the two proxy custom connectors from the deployed proxy hosts:
+
+```bash
+export NORTH_REGION_PROXY_HOST='<first-regional-proxy-host-or-url>'
+export WEST_REGION_PROXY_HOST='<second-regional-proxy-host-or-url>'
+export NORTH_REGION_CONNECTOR_DISPLAY_NAME='North Region NAT Proxy'
+export WEST_REGION_CONNECTOR_DISPLAY_NAME='West Region NAT Proxy'
+
+./scripts/12-create-proxy-connectors.sh
+```
+
+The script writes generated connector definitions under `.azure/generated-connectors`, which is ignored by Git.
+
+### 8. Deploy Logic Apps Examples
+
+For Logic Apps Consumption examples that call only approved proxies:
+
+```bash
+export LOGIC_APP_RESOURCE_GROUP="$RESOURCE_GROUP"
+export NORTH_EUROPE_PROXY_URL='<first-regional-proxy-url>'
+export WEST_EUROPE_PROXY_URL='<second-regional-proxy-url>'
+export NORTH_EUROPE_WORKFLOW_NAME='<workflow-name-1>'
+export WEST_EUROPE_WORKFLOW_NAME='<workflow-name-2>'
+
+./scripts/11-deploy-logicapp-proxy-example.sh
+```
+
+For production Logic Apps, either enforce proxy-only HTTP targets or use Logic Apps Standard with VNet integration and its own NAT/Azure Firewall egress design.
+
+### 9. Enforce The Boundary
+
+Power Platform and Logic Apps enforcement is an architecture and governance task, not just a network setting.
+
+| Layer | Required action |
+| --- | --- |
+| Power Platform DLP | Allow approved proxy connectors; block or isolate direct HTTP and unapproved connectors where possible. |
+| Environment governance | Restrict who can create connectors, flows, connection references, and solutions. |
+| Workflow review | Reject flows or Logic Apps that call AWS/public destinations directly. |
+| Proxy security | Add APIM, OAuth, mTLS, managed identity, API keys, or equivalent production access control. |
+| Azure governance | Use Azure Policy, IaC review, tags, and RBAC to control proxy/network changes. |
+| AWS enforcement | Allow only the customer-approved NAT or firewall public IPs. Deny all other source IPs. |
+
+### 10. Prove It
+
+For every region and path, capture destination-observed evidence:
+
+- Proxy response from `/proxy/aws-checkip`
+- AWS endpoint logs or WAF/API Gateway/ALB logs
+- Power Automate run history or custom connector test result
+- Logic App run history when Logic Apps are in scope
+
+The proof passes only when the destination sees the approved NAT or firewall public IP.
+
+## Limitations
+
+- NAT Gateway does not control traffic that is not sent from an associated Azure subnet.
+- Power Automate built-in HTTP direct-to-AWS is not a NAT Gateway proof path.
+- Managed connector paths can succeed while using Microsoft-managed egress IPs.
+- The proxy is an explicit hop, not transparent interception.
+- Customers must enforce DLP, environment controls, and AWS allowlisting to prevent bypass.
+- Container Apps external ingress should be protected before production use.
+- NAT Gateway gives fixed SNAT but does not provide FQDN filtering or detailed egress policy. Use Azure Firewall if those controls are required.
+- Region pairing and Power Platform geography requirements must be reviewed for the customer's tenant.
+
+## Cost Considerations
+
+Costs vary by region and usage. Estimate with the Azure Pricing Calculator before production. The main cost drivers are:
+
+| Resource | Cost driver | Notes |
+| --- | --- | --- |
+| NAT Gateway | Hourly charge plus processed data | One per egress subnet/region in this design. |
+| Public IP | Hourly static IP charge | Required for stable allowlisting. |
+| Container Apps | vCPU/memory, replicas, requests, environment profile | Keep minimum replicas low for proof; size for production latency and availability. |
+| Log Analytics | Ingested logs and retention | Tune retention and sampling. |
+| Container Registry | SKU and storage | Basic is usually enough for proof; production may require network/private access controls. |
+| Logic Apps | Trigger/action executions | Consumption examples are inexpensive for proof but can grow with volume. |
+| API Management or Azure Firewall, if used | Capacity/SKU/hourly and data processing | Higher cost, stronger governance and inspection. |
+
+For proofs, delete unused resource groups and stop unused flows after capture. For production, budget for high availability, logging retention, monitoring, and security controls.
+
+## Day 2 Operations
+
+| Area | What to operate |
+| --- | --- |
+| Egress IP drift | Monitor NAT public IP resources and AWS allowlists. Treat public IP changes as a change-controlled event. |
+| Proxy health | Monitor `/health`, Container Apps revision health, replica count, latency, and error rate. |
+| Logs | Review Container Apps logs, Log Analytics retention, and failed upstream calls. |
+| Security | Rotate proxy credentials, review DLP policies, audit connector and flow creators. |
+| Cost | Review NAT Gateway data volume, Container Apps replica sizing, and Log Analytics ingestion. |
+| Releases | Use Container Apps revisions for rollback. Promote image tags through environments. |
+| Governance | Periodically search for direct HTTP calls to AWS/public endpoints and remove bypass paths. |
+| Disaster recovery | Decide whether both paired regions are active/active, active/passive, or proof-only. |
+
+## Repository Map
+
+| Path | Purpose |
+| --- | --- |
+| [infra/main.bicep](infra/main.bicep) | Deploys paired VNets, delegated Power Platform subnets, NAT Gateways, public IPs, NSGs, and peering. |
+| [proxy-endpoint](proxy-endpoint) | Container Apps proxy source code. |
+| [scripts](scripts) | Customer-run automation. Values come from exported environment variables. |
+| [connectors](connectors) | Custom connector OpenAPI definitions and API properties. Update hosts before customer use. |
+| [docs/CUSTOMER-STEP-BY-STEP.md](docs/CUSTOMER-STEP-BY-STEP.md) | Detailed customer runbook. |
+| [docs/REGIONAL-PROXY-ENFORCEMENT.md](docs/REGIONAL-PROXY-ENFORCEMENT.md) | Enforcement model and controls. |
+| [docs/POWER-AUTOMATE-E2E-RESULTS.md](docs/POWER-AUTOMATE-E2E-RESULTS.md) | Validation example showing custom connector, built-in HTTP direct, and built-in HTTP via proxy behavior. |
+
+## Public Repo Safety
+
+- Do not commit populated `.env` files.
+- Do not commit signed callback URLs, bearer tokens, client secrets, or generated deployment outputs.
+- Treat files under `docs/evidence` as example validation captures. Replace them with customer-approved evidence before sharing externally.
+- Review connector definitions and proxy hostnames before customer deployment.

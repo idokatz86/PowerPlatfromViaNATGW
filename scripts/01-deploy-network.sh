@@ -1,26 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SUBSCRIPTION_ID="${SUBSCRIPTION_ID:-152f2bd5-8f6b-48ba-a702-21a23172a224}"
-RESOURCE_GROUP="${RESOURCE_GROUP:-rg-ppnatgw-demo}"
-LOCATION="${LOCATION:-westeurope}"
-DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-ppnatgw-network-$(date +%Y%m%d%H%M%S)}"
+source "$(dirname "$0")/lib/common.sh"
 
-az account set --subscription "$SUBSCRIPTION_ID"
-az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --tags purpose=PowerPlatformViaNATGW owner=idokatz@microsoft.com >/dev/null
+require_env SUBSCRIPTION_ID RESOURCE_GROUP LOCATION
+PARAMETERS_FILE="${PARAMETERS_FILE:-infra/main.parameters.json}"
+DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-powerplatform-network-$(date +%Y%m%d%H%M%S)}"
+
+set_subscription
+ensure_output_dir
+
+az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --tags purpose=PowerPlatformViaNATGW >/dev/null
 
 echo "Running deployment what-if..."
 az deployment group what-if \
   --resource-group "$RESOURCE_GROUP" \
   --template-file infra/main.bicep \
-  --parameters @infra/main.parameters.json
+  --parameters @"$PARAMETERS_FILE"
 
 echo "Deploying network resources..."
 az deployment group create \
   --name "$DEPLOYMENT_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --template-file infra/main.bicep \
-  --parameters @infra/main.parameters.json \
+  --parameters @"$PARAMETERS_FILE" \
   --query 'properties.outputs' \
   -o json | tee .azure/network-outputs.json
 

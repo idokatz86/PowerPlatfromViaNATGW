@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SUBSCRIPTION_ID="${SUBSCRIPTION_ID:-3cce1c0d-4798-48da-92cd-daaf643e932c}"
-RESOURCE_GROUP="${LOGIC_APP_RESOURCE_GROUP:-rg-ppnatgw-demo}"
-NORTH_EUROPE_PROXY_URL="${NORTH_EUROPE_PROXY_URL:-https://ppnatgw-proxy.yellowmeadow-5cf2ecd6.northeurope.azurecontainerapps.io}"
-WEST_EUROPE_PROXY_URL="${WEST_EUROPE_PROXY_URL:-https://ppnatgw-proxy-weu.orangesea-6ab30ac0.westeurope.azurecontainerapps.io}"
-NORTH_EUROPE_WORKFLOW_NAME="${NORTH_EUROPE_WORKFLOW_NAME:-ppnatgw-proxy-proof-neu-la}"
-WEST_EUROPE_WORKFLOW_NAME="${WEST_EUROPE_WORKFLOW_NAME:-ppnatgw-proxy-proof-weu-la}"
+source "$(dirname "$0")/lib/common.sh"
 
-az account set --subscription "$SUBSCRIPTION_ID"
+require_env SUBSCRIPTION_ID LOGIC_APP_RESOURCE_GROUP NORTH_EUROPE_PROXY_URL WEST_EUROPE_PROXY_URL NORTH_EUROPE_WORKFLOW_NAME WEST_EUROPE_WORKFLOW_NAME
+
+RESOURCE_GROUP="$LOGIC_APP_RESOURCE_GROUP"
+
+set_subscription
+ensure_output_dir
 
 az deployment group create \
   --resource-group "$RESOURCE_GROUP" \

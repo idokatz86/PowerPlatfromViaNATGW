@@ -1,24 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SUBSCRIPTION_ID="${SUBSCRIPTION_ID:-3cce1c0d-4798-48da-92cd-daaf643e932c}"
-RESOURCE_GROUP="${PROXY_RESOURCE_GROUP:-rg-ppnatgw-demo}"
-LOCATION="${PROXY_LOCATION:-northeurope}"
-VNET_NAME="${PROXY_VNET_NAME:-ppnatgw-vnet-neu}"
-SUBNET_NAME="${PROXY_SUBNET_NAME:-snet-containerapps-proxy}"
-SUBNET_PREFIX="${PROXY_SUBNET_PREFIX:-10.43.10.0/23}"
-NAT_NAME="${PROXY_NAT_NAME:-ppnatgw-nat-neu}"
-PUBLIC_IP_NAME="${PROXY_PUBLIC_IP_NAME:-ppnatgw-pip-neu}"
-LOG_ANALYTICS_NAME="${PROXY_LOG_ANALYTICS_NAME:-ppnatgw-proxy-law}"
-CONTAINER_ENV_NAME="${PROXY_CONTAINER_ENV_NAME:-ppnatgw-proxy-env}"
-CONTAINER_APP_NAME="${PROXY_CONTAINER_APP_NAME:-ppnatgw-proxy}"
-ACR_NAME="${PROXY_ACR_NAME:-ppnatgwproxyneu06311682}"
-IMAGE_NAME="${PROXY_IMAGE_NAME:-ppnatgw-proxy}"
+source "$(dirname "$0")/lib/common.sh"
+
+require_env SUBSCRIPTION_ID PROXY_RESOURCE_GROUP PROXY_LOCATION PROXY_VNET_NAME PROXY_SUBNET_NAME PROXY_SUBNET_PREFIX PROXY_NAT_NAME PROXY_PUBLIC_IP_NAME PROXY_LOG_ANALYTICS_NAME PROXY_CONTAINER_ENV_NAME PROXY_CONTAINER_APP_NAME PROXY_ACR_NAME
+
+RESOURCE_GROUP="$PROXY_RESOURCE_GROUP"
+LOCATION="$PROXY_LOCATION"
+VNET_NAME="$PROXY_VNET_NAME"
+SUBNET_NAME="$PROXY_SUBNET_NAME"
+SUBNET_PREFIX="$PROXY_SUBNET_PREFIX"
+NAT_NAME="$PROXY_NAT_NAME"
+PUBLIC_IP_NAME="$PROXY_PUBLIC_IP_NAME"
+LOG_ANALYTICS_NAME="$PROXY_LOG_ANALYTICS_NAME"
+CONTAINER_ENV_NAME="$PROXY_CONTAINER_ENV_NAME"
+CONTAINER_APP_NAME="$PROXY_CONTAINER_APP_NAME"
+ACR_NAME="$PROXY_ACR_NAME"
+IMAGE_NAME="${PROXY_IMAGE_NAME:-powerplatform-egress-proxy}"
 IMAGE_TAG="${PROXY_IMAGE_TAG:-$(date +%Y%m%d%H%M%S)}"
-EXPECTED_NAT_IPS="${EXPECTED_NAT_IPS:-20.166.89.8,51.124.38.135}"
 OUTPUT_PATH="${PROXY_OUTPUT_PATH:-.azure/container-apps-proxy.json}"
 
-az account set --subscription "$SUBSCRIPTION_ID"
+set_subscription
+ensure_output_dir
 
 az provider register --namespace Microsoft.App --wait >/dev/null
 az provider register --namespace Microsoft.ContainerRegistry --wait >/dev/null
@@ -64,6 +67,7 @@ az network vnet subnet update \
 
 subnet_id="$(az network vnet subnet show --resource-group "$RESOURCE_GROUP" --vnet-name "$VNET_NAME" --name "$SUBNET_NAME" --query id -o tsv)"
 nat_ip="$(az network public-ip show --resource-group "$RESOURCE_GROUP" --name "$PUBLIC_IP_NAME" --query ipAddress -o tsv)"
+EXPECTED_NAT_IPS="${EXPECTED_NAT_IPS:-$nat_ip}"
 
 if ! az monitor log-analytics workspace show --resource-group "$RESOURCE_GROUP" --workspace-name "$LOG_ANALYTICS_NAME" >/dev/null 2>&1; then
   az monitor log-analytics workspace create \
@@ -130,6 +134,7 @@ fqdn="$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "$CONTAIN
 base_url="https://${fqdn}"
 
 mkdir -p .azure
+mkdir -p "$(dirname "$OUTPUT_PATH")"
 cat > "$OUTPUT_PATH" <<EOF
 {
   "resourceGroup": "$RESOURCE_GROUP",

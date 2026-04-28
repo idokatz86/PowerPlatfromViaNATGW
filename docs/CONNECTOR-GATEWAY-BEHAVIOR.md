@@ -31,17 +31,17 @@ A successful HTTP `200` only answers the first question. It does not prove NAT G
 
 ## How To Explain The Public IP Echo Results
 
-Both public IP echo tests returned `20.86.93.37`:
+Both public IP echo tests returned `<microsoft-managed-egress-ip>`:
 
 | Test destination | Result | Classification |
 | --- | --- | --- |
-| `api.ipify.org` | `20.86.93.37` | Not a valid NAT Gateway proof |
-| `checkip.amazonaws.com` | `20.86.93.37` | Not a valid NAT Gateway proof |
+| `api.ipify.org` | `<microsoft-managed-egress-ip>` | Not a valid NAT Gateway proof |
+| `checkip.amazonaws.com` | `<microsoft-managed-egress-ip>` | Not a valid NAT Gateway proof |
 
 That proves the connector reached the public internet, but it does not prove the customer NAT Gateway path because the expected NAT Gateway IPs are:
 
-- `20.166.89.8`
-- `51.124.38.135`
+- `<north-region-nat-ip>`
+- `<west-region-nat-ip>`
 
 So the correct customer explanation is:
 
@@ -50,7 +50,7 @@ The public IP echo call succeeded, but it did not prove NAT Gateway egress.
 For deterministic NAT proof, the destination must show one of the NAT Gateway public IPs.
 ```
 
-This also means that for the final AWS MCP target, AWS-side validation is mandatory. In this demo, AWS checkip saw `20.86.93.37`, not the NAT Gateway IP.
+This also means that for the final AWS MCP target, AWS-side validation is mandatory. In this demo, AWS checkip saw `<microsoft-managed-egress-ip>`, not the NAT Gateway IP.
 
 ## Validated Proxy Contrast
 
@@ -58,9 +58,9 @@ The customer-controlled Azure proxy pattern changes which service makes the AWS-
 
 | Path | `api.ipify.org` observed | `checkip.amazonaws.com` observed | Classification |
 | --- | --- | --- | --- |
-| Direct public connector path | `20.86.93.37` | `20.86.93.37` | Not a NAT Gateway proof |
-| North Europe Container Apps proxy path | `20.166.89.8` | `20.166.89.8` | Valid NAT Gateway proof |
-| West Europe Container Apps proxy path | `51.124.38.135` | `51.124.38.135` | Valid NAT Gateway proof |
+| Direct public connector path | `<microsoft-managed-egress-ip>` | `<microsoft-managed-egress-ip>` | Not a NAT Gateway proof |
+| North Europe Container Apps proxy path | `<north-region-nat-ip>` | `<north-region-nat-ip>` | Valid NAT Gateway proof |
+| West Europe Container Apps proxy path | `<west-region-nat-ip>` | `<west-region-nat-ip>` | Valid NAT Gateway proof |
 
 This is the main customer explanation: the proxy is not a transparent network intercept. It is a customer-owned egress point that the app or workflow must call explicitly.
 
@@ -77,4 +77,4 @@ Best proof sources:
 - This repo's Azure inspection endpoint
 - The validated regional Container Apps proxy endpoints
 
-Simple public IP echo services such as `api.ipify.org` and `checkip.amazonaws.com` are useful smoke tests, but only count as proof if they return one of the NAT Gateway IPs. In this demo, both returned `20.86.93.37`, so they are documented as non-proof paths.
+Simple public IP echo services such as `api.ipify.org` and `checkip.amazonaws.com` are useful smoke tests, but only count as proof if they return one of the NAT Gateway IPs. In this demo, both returned `<microsoft-managed-egress-ip>`, so they are documented as non-proof paths.

@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SUBSCRIPTION_ID="${SUBSCRIPTION_ID:-3cce1c0d-4798-48da-92cd-daaf643e932c}"
-INSPECTION_RESOURCE_GROUP="${INSPECTION_RESOURCE_GROUP:-rg-ppnatgw-inspection}"
-INSPECTION_LOCATION="${INSPECTION_LOCATION:-francecentral}"
-INSPECTION_PLAN_NAME="${INSPECTION_PLAN_NAME:-ppnatgw-inspection-free-francecentral}"
-INSPECTION_WEBAPP_NAME="${INSPECTION_WEBAPP_NAME:-ppnatgw-inspect-frc-06311682}"
-INSPECTION_SKU="${INSPECTION_SKU:-F1}"
+source "$(dirname "$0")/lib/common.sh"
 
-az account set --subscription "$SUBSCRIPTION_ID"
+require_env SUBSCRIPTION_ID INSPECTION_RESOURCE_GROUP INSPECTION_LOCATION INSPECTION_PLAN_NAME INSPECTION_WEBAPP_NAME
+INSPECTION_SKU="${INSPECTION_SKU:-B1}"
+
+set_subscription
+ensure_output_dir
 az group create --name "$INSPECTION_RESOURCE_GROUP" --location "$INSPECTION_LOCATION" >/dev/null
 
 if ! az appservice plan show --name "$INSPECTION_PLAN_NAME" --resource-group "$INSPECTION_RESOURCE_GROUP" >/dev/null 2>&1; then

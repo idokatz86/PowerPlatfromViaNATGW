@@ -3,5 +3,9 @@
 .azure/*.log
 .azure/*.txt
 .azure/*.zip
+.azure/generated-connectors/
 infra/*.json
+.env
+.env.*
+!.env.example
 .DS_Store

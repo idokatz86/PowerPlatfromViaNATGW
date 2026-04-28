@@ -1,13 +1,13 @@
 {
   "capturedAtUtc": "2026-04-28T22:00:38Z",
   "environment": {
-    "environmentId": "f021725d-8eeb-e31b-9427-7334c58a3a5b",
+    "environmentId": "<power-platform-environment-id>",
     "environmentName": "Fnx-mng",
-    "tenantId": "0bf51094-2478-4975-9cbc-61fb8c649e62"
+    "tenantId": "<microsoft-entra-tenant-id>"
   },
   "expectedNatIps": {
-    "northEurope": "20.166.89.8",
-    "westEurope": "51.124.38.135"
+    "northEurope": "<north-region-nat-ip>",
+    "westEurope": "<west-region-nat-ip>"
   },
   "customConnectorTests": [
     {
@@ -19,15 +19,15 @@
       "powerAutomateStatus": 200,
       "schemaValidation": "Succeeded",
       "timestampUtc": "2026-04-28T21:55:40.968Z",
-      "containerAppRevision": "ppnatgw-proxy--i5at7yk",
+      "containerAppRevision": "<north-region-container-app-name>--i5at7yk",
       "ipify": {
         "target": "https://api.ipify.org/?format=json",
-        "observedIp": "20.166.89.8",
+        "observedIp": "<north-region-nat-ip>",
         "natProof": true
       },
       "awsCheckIp": {
         "target": "https://checkip.amazonaws.com/",
-        "observedIp": "20.166.89.8",
+        "observedIp": "<north-region-nat-ip>",
         "natProof": true
       },
       "conclusion": "Custom connector calls the North Europe regional proxy. The AWS-facing and ipify-facing calls leave through the North Europe NAT Gateway."
@@ -41,15 +41,15 @@
       "powerAutomateStatus": 200,
       "schemaValidation": "Succeeded",
       "timestampUtc": "2026-04-28T21:56:18.559Z",
-      "containerAppRevision": "ppnatgw-proxy-weu--vpyhkc1",
+      "containerAppRevision": "<west-region-container-app-name>--vpyhkc1",
       "ipify": {
         "target": "https://api.ipify.org/?format=json",
-        "observedIp": "51.124.38.135",
+        "observedIp": "<west-region-nat-ip>",
         "natProof": true
       },
       "awsCheckIp": {
         "target": "https://checkip.amazonaws.com/",
-        "observedIp": "51.124.38.135",
+        "observedIp": "<west-region-nat-ip>",
         "natProof": true
       },
       "conclusion": "Custom connector calls the West Europe regional proxy. The AWS-facing and ipify-facing calls leave through the West Europe NAT Gateway."
@@ -64,7 +64,7 @@
       "startTimeUtc": "2026-04-28T22:00:04.6051642Z",
       "endTimeUtc": "2026-04-28T22:00:05.3365055Z",
       "action": "Built-in HTTP GET directly to https://checkip.amazonaws.com/",
-      "observedIp": "98.71.111.250",
+      "observedIp": "<built-in-http-direct-egress-ip>",
       "natProof": false,
       "conclusion": "The built-in Power Automate HTTP action works functionally, but direct calls to AWS checkip do not leave through either customer NAT Gateway. This path is not valid for NAT enforcement proof."
     },
@@ -77,17 +77,17 @@
       "endTimeUtc": "2026-04-28T22:00:38.333268Z",
       "action": "Built-in HTTP GET to both regional Container Apps proxy /proxy/all endpoints",
       "northEuropeProxy": {
-        "proxyUrl": "https://ppnatgw-proxy.yellowmeadow-5cf2ecd6.northeurope.azurecontainerapps.io/proxy/all",
-        "ipifyObservedIp": "20.166.89.8",
+        "proxyUrl": "https://<north-region-proxy-host>/proxy/all",
+        "ipifyObservedIp": "<north-region-nat-ip>",
         "ipifyNatProof": true,
-        "awsObservedIp": "20.166.89.8",
+        "awsObservedIp": "<north-region-nat-ip>",
         "awsNatProof": true
       },
       "westEuropeProxy": {
-        "proxyUrl": "https://ppnatgw-proxy-weu.orangesea-6ab30ac0.westeurope.azurecontainerapps.io/proxy/all",
-        "ipifyObservedIp": "51.124.38.135",
+        "proxyUrl": "https://<west-region-proxy-host>/proxy/all",
+        "ipifyObservedIp": "<west-region-nat-ip>",
         "ipifyNatProof": true,
-        "awsObservedIp": "51.124.38.135",
+        "awsObservedIp": "<west-region-nat-ip>",
         "awsNatProof": true
       },
       "conclusion": "The built-in Power Automate HTTP action can be used safely only when it calls the approved regional proxy endpoints. The customer-controlled proxy then owns the AWS-facing egress through NAT Gateway."

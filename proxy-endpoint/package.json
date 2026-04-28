@@ -1,5 +1,5 @@
 {
-  "name": "ppnatgw-containerapps-proxy",
+  "name": "power-platform-egress-proxy",
   "version": "1.0.0",
   "private": true,
   "type": "module",

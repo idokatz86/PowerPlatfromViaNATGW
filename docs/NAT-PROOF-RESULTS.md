@@ -8,10 +8,10 @@ Yes: the Power Platform custom connector test exited through the North Europe NA
 | --- | --- |
 | Test run | `powerplatform-test-009` |
 | Timestamp | `2026-04-28T20:20:21.854Z` |
-| Power Platform environment | `f021725d-8eeb-e31b-9427-7334c58a3a5b` |
-| Inspection endpoint | `https://ppnatgw-inspect-frc-06311682.azurewebsites.net/inspect` |
-| Destination-observed source IP | `20.166.89.8` |
-| Matching NAT Gateway | `ppnatgw-nat-neu` |
+| Power Platform environment | `<power-platform-environment-id>` |
+| Inspection endpoint | `https://<inspection-web-app-host>/inspect` |
+| Destination-observed source IP | `<north-region-nat-ip>` |
+| Matching NAT Gateway | `<north-region-nat-gateway-name>` |
 | NAT Gateway region | `northeurope` |
 | Subnet delegation header | `x-ms-subnet-delegation-enabled: true` |
 | Power Platform forwarded host | `sbx.neu-il109.gateway.prod.island.powerapps.com` |
@@ -27,10 +27,10 @@ Evidence files:
 {
   "timestamp": "2026-04-28T20:20:21.854Z",
   "run": "powerplatform-test-009",
-  "observedClientIp": "20.166.89.8",
-  "rawObservedClientIp": "20.166.89.8:50750",
-  "appServiceClientIp": "20.166.89.8:50750",
-  "xForwardedFor": "::ffff:20.86.93.37, 20.166.89.8:50750",
+  "observedClientIp": "<north-region-nat-ip>",
+  "rawObservedClientIp": "<north-region-nat-ip>:50750",
+  "appServiceClientIp": "<north-region-nat-ip>:50750",
+  "xForwardedFor": "::ffff:<microsoft-managed-egress-ip>, <north-region-nat-ip>:50750",
   "xMsSubnetDelegationEnabled": "true",
   "xForwardedHost": "sbx.neu-il109.gateway.prod.island.powerapps.com"
 }
@@ -38,4 +38,4 @@ Evidence files:
 
 ## Remaining Paired-Region Proof
 
-The West Europe NAT Gateway public IP is `51.124.38.135`. It has not yet been observed by the destination endpoint. The test runs executed so far stayed on the North Europe Power Platform runtime path, so only the North Europe NAT Gateway is proven by destination-observed traffic.
+The West Europe NAT Gateway public IP is `<west-region-nat-ip>`. It has not yet been observed by the destination endpoint. The test runs executed so far stayed on the North Europe Power Platform runtime path, so only the North Europe NAT Gateway is proven by destination-observed traffic.

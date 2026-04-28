@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RESOURCE_GROUP="${RESOURCE_GROUP:-rg-ppnatgw-inspection}"
-WEBAPP_NAME="${WEBAPP_NAME:-ppnatgw-inspect-frc-06311682}"
+source "$(dirname "$0")/lib/common.sh"
+
+require_env INSPECTION_RESOURCE_GROUP INSPECTION_WEBAPP_NAME
 
 az webapp log tail \
-  --resource-group "$RESOURCE_GROUP" \
-  --name "$WEBAPP_NAME"
+  --resource-group "$INSPECTION_RESOURCE_GROUP" \
+  --name "$INSPECTION_WEBAPP_NAME"

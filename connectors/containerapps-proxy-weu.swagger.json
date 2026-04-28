@@ -5,7 +5,7 @@
     "description": "Calls the West Europe customer-controlled Container Apps proxy. The proxy performs outbound calls through the West Europe NAT Gateway.",
     "version": "1.0.0"
   },
-  "host": "ppnatgw-proxy-weu.orangesea-6ab30ac0.westeurope.azurecontainerapps.io",
+  "host": "replace-with-west-region-proxy-host.example.com",
   "basePath": "/",
   "schemes": ["https"],
   "consumes": ["application/json"],

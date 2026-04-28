@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-POWER_PLATFORM_ENVIRONMENT_ID="${POWER_PLATFORM_ENVIRONMENT_ID:-f021725d-8eeb-e31b-9427-7334c58a3a5b}"
+source "$(dirname "$0")/lib/common.sh"
+
+require_env POWER_PLATFORM_ENVIRONMENT_ID
 PAC_CLI="${PAC_CLI:-$HOME/.dotnet/tools/pac}"
 CONNECTOR_NAME="${CONNECTOR_NAME:-NAT Proof Inspector}"
 

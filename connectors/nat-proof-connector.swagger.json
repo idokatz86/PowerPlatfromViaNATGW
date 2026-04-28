@@ -5,7 +5,7 @@
     "description": "Calls the external inspection endpoint and returns the source IP observed by the destination.",
     "version": "1.0.0"
   },
-  "host": "ppnatgw-inspect-frc-06311682.azurewebsites.net",
+  "host": "replace-with-inspection-web-app-host.example.com",
   "basePath": "/",
   "schemes": ["https"],
   "consumes": ["application/json"],

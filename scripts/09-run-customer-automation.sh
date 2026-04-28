@@ -1,17 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-required_vars=(SUBSCRIPTION_ID TENANT_ID POWER_PLATFORM_ENVIRONMENT_ID)
-for var_name in "${required_vars[@]}"; do
-  if [[ -z "${!var_name:-}" ]]; then
-    echo "Missing required environment variable: $var_name" >&2
-    exit 1
-  fi
-done
+source "$(dirname "$0")/lib/common.sh"
 
-export RESOURCE_GROUP="${RESOURCE_GROUP:-rg-ppnatgw-demo}"
-export POLICY_NAME="${POLICY_NAME:-ppnatgw-europe-policy}"
-export POLICY_LOCATION="${POLICY_LOCATION:-europe}"
+require_env SUBSCRIPTION_ID TENANT_ID POWER_PLATFORM_ENVIRONMENT_ID RESOURCE_GROUP LOCATION POLICY_NAME POLICY_LOCATION INSPECTION_RESOURCE_GROUP INSPECTION_LOCATION INSPECTION_PLAN_NAME INSPECTION_WEBAPP_NAME
 
 echo "Step 1/6: deploying paired VNets, delegated subnets, NAT Gateways, and public IPs"
 ./scripts/01-deploy-network.sh

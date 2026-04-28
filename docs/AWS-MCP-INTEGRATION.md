@@ -28,12 +28,12 @@ For a public AWS MCP endpoint, the original target design is to allow inbound HT
 
 | Azure NAT Gateway | Region | Public IP | AWS action |
 | --- | --- | --- | --- |
-| `ppnatgw-nat-weu` | West Europe | `51.124.38.135` | Add to allowlist for high availability / paired-region path |
-| `ppnatgw-nat-neu` | North Europe | `20.166.89.8` | Add to allowlist; this is the proven active path |
+| `<west-region-nat-gateway-name>` | West Europe | `<west-region-nat-ip>` | Add to allowlist for high availability / paired-region path |
+| `<north-region-nat-gateway-name>` | North Europe | `<north-region-nat-ip>` | Add to allowlist; this is the proven active path |
 
 Do not treat this table as the final AWS allowlist until AWS-side logs prove that AWS actually observes one of these IPs.
 
-In this demo, the AWS-hosted `checkip.amazonaws.com` test returned `20.86.93.37`, not either NAT Gateway IP. That means an AWS WAF, API Gateway, ALB, or application allowlist containing only `20.166.89.8` and `51.124.38.135` would likely block the tested public connector path.
+In this demo, the AWS-hosted `checkip.amazonaws.com` test returned `<microsoft-managed-egress-ip>`, not either NAT Gateway IP. That means an AWS WAF, API Gateway, ALB, or application allowlist containing only `<north-region-nat-ip>` and `<west-region-nat-ip>` would likely block the tested public connector path.
 
 Use [AWS-CHECKIP-PROOF.md](AWS-CHECKIP-PROOF.md) and the included AWS-side MCP ingress probe before locking down the AWS source IP allowlist.
 
@@ -41,8 +41,8 @@ The customer-controlled proxy pattern has been validated against AWS `checkip.am
 
 | Proxy region | AWS checkip observed IP | Classification | Evidence |
 | --- | --- | --- | --- |
-| North Europe proxy | `20.166.89.8` | Valid NAT proof | [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
-| West Europe proxy | `51.124.38.135` | Valid NAT proof | [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
+| North Europe proxy | `<north-region-nat-ip>` | Valid NAT proof | [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
+| West Europe proxy | `<west-region-nat-ip>` | Valid NAT proof | [CONTAINER-APPS-PROXY-PROOF.md](CONTAINER-APPS-PROXY-PROOF.md) |
 
 For production, AWS should allowlist the proxy NAT IPs and reject direct bypass paths that arrive from Microsoft-managed connector or Logic Apps public IPs.
 
@@ -108,8 +108,8 @@ Azure App Service adds a `client-ip` header that represents the client IP observ
 The `x-forwarded-for` header can contain multiple hops. In the successful run, it contained both an internal upstream hop and the NAT Gateway public IP:
 
 ```text
-x-forwarded-for: ::ffff:20.86.93.37, 20.166.89.8:50750
-client-ip: 20.166.89.8:50750
+x-forwarded-for: ::ffff:<microsoft-managed-egress-ip>, <north-region-nat-ip>:50750
+client-ip: <north-region-nat-ip>:50750
 ```
 
 For the proof tool, `observedClientIp` is derived from `client-ip` first, then falls back to `x-forwarded-for` only when `client-ip` is unavailable.
