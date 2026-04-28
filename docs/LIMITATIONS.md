@@ -2,6 +2,8 @@
 
 This document is the customer-facing boundary statement for the NAT Gateway proof.
 
+For concrete examples, see [SCENARIOS.md](SCENARIOS.md), which lists working scenarios versus not working or not guaranteed scenarios.
+
 ## What This Solution Proves
 
 This solution proves that a **VNet-supported Power Platform custom connector** can egress to the internet through the Azure NAT Gateway public IP attached to the delegated subnet.

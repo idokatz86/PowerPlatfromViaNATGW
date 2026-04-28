@@ -132,6 +132,7 @@ See [docs/PROOF-GUIDE.md](docs/PROOF-GUIDE.md) for the step-by-step screenshot a
 - [docs/APPLICATION-FLOW.md](docs/APPLICATION-FLOW.md) describes the runtime request flow and proof flow.
 - [docs/AWS-MCP-INTEGRATION.md](docs/AWS-MCP-INTEGRATION.md) explains how to connect the final Power App/custom connector flow to an AWS-hosted MCP endpoint and what AWS must allow.
 - [docs/LIMITATIONS.md](docs/LIMITATIONS.md) states the customer-facing limitations and expectations.
+- [docs/SCENARIOS.md](docs/SCENARIOS.md) lists working scenarios versus not working or not guaranteed scenarios.
 
 ## AWS MCP Diagnostic Tool
 
@@ -140,6 +141,7 @@ If the final AWS MCP call fails, use [tools/mcp-ingress-probe](tools/mcp-ingress
 ## Important Notes
 
 Read [docs/LIMITATIONS.md](docs/LIMITATIONS.md) before using this design with a customer. The short version is below.
+For a practical customer decision matrix, read [docs/SCENARIOS.md](docs/SCENARIOS.md).
 
 The successful proof in this repository used a Power Platform custom connector, not the normal built-in Power Automate HTTP action.
 
