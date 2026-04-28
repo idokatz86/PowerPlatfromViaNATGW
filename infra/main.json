@@ -1,0 +1,335 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.42.1.51946",
+      "templateHash": "3700385677577276472"
+    }
+  },
+  "parameters": {
+    "namePrefix": {
+      "type": "string",
+      "defaultValue": "ppnatgw",
+      "metadata": {
+        "description": "Resource name prefix. Keep it short because several Azure resource names include it."
+      }
+    },
+    "primaryLocation": {
+      "type": "string",
+      "defaultValue": "westeurope",
+      "metadata": {
+        "description": "Primary Azure region for the Europe Power Platform geography."
+      }
+    },
+    "secondaryLocation": {
+      "type": "string",
+      "defaultValue": "northeurope",
+      "metadata": {
+        "description": "Secondary Azure region for the Europe Power Platform geography."
+      }
+    },
+    "primaryVnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.42.0.0/16",
+      "metadata": {
+        "description": "Address space for the primary virtual network."
+      }
+    },
+    "primarySubnetPrefix": {
+      "type": "string",
+      "defaultValue": "10.42.1.0/24",
+      "metadata": {
+        "description": "Delegated subnet prefix in the primary virtual network."
+      }
+    },
+    "secondaryVnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.43.0.0/16",
+      "metadata": {
+        "description": "Address space for the secondary virtual network."
+      }
+    },
+    "secondarySubnetPrefix": {
+      "type": "string",
+      "defaultValue": "10.43.1.0/24",
+      "metadata": {
+        "description": "Delegated subnet prefix in the secondary virtual network."
+      }
+    },
+    "delegatedSubnetName": {
+      "type": "string",
+      "defaultValue": "snet-powerplatform-delegated",
+      "metadata": {
+        "description": "Subnet name used in both virtual networks."
+      }
+    }
+  },
+  "variables": {
+    "primaryVnetName": "[format('{0}-vnet-weu', parameters('namePrefix'))]",
+    "secondaryVnetName": "[format('{0}-vnet-neu', parameters('namePrefix'))]",
+    "primaryNatName": "[format('{0}-nat-weu', parameters('namePrefix'))]",
+    "secondaryNatName": "[format('{0}-nat-neu', parameters('namePrefix'))]",
+    "primaryPipName": "[format('{0}-pip-weu', parameters('namePrefix'))]",
+    "secondaryPipName": "[format('{0}-pip-neu', parameters('namePrefix'))]",
+    "primaryNsgName": "[format('{0}-nsg-weu', parameters('namePrefix'))]",
+    "secondaryNsgName": "[format('{0}-nsg-neu', parameters('namePrefix'))]",
+    "powerPlatformDelegation": {
+      "name": "Microsoft.PowerPlatform.enterprisePolicies",
+      "properties": {
+        "serviceName": "Microsoft.PowerPlatform/enterprisePolicies"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2024-05-01",
+      "name": "[variables('primaryPipName')]",
+      "location": "[parameters('primaryLocation')]",
+      "sku": {
+        "name": "Standard",
+        "tier": "Regional"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "publicIPAddressVersion": "IPv4"
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2024-05-01",
+      "name": "[variables('secondaryPipName')]",
+      "location": "[parameters('secondaryLocation')]",
+      "sku": {
+        "name": "Standard",
+        "tier": "Regional"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "publicIPAddressVersion": "IPv4"
+      }
+    },
+    {
+      "type": "Microsoft.Network/natGateways",
+      "apiVersion": "2024-05-01",
+      "name": "[variables('primaryNatName')]",
+      "location": "[parameters('primaryLocation')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "idleTimeoutInMinutes": 10,
+        "publicIpAddresses": [
+          {
+            "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('primaryPipName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('primaryPipName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/natGateways",
+      "apiVersion": "2024-05-01",
+      "name": "[variables('secondaryNatName')]",
+      "location": "[parameters('secondaryLocation')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "idleTimeoutInMinutes": 10,
+        "publicIpAddresses": [
+          {
+            "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('secondaryPipName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('secondaryPipName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2024-05-01",
+      "name": "[variables('primaryNsgName')]",
+      "location": "[parameters('primaryLocation')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowHttpsOutbound",
+            "properties": {
+              "priority": 100,
+              "direction": "Outbound",
+              "access": "Allow",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "Internet"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2024-05-01",
+      "name": "[variables('secondaryNsgName')]",
+      "location": "[parameters('secondaryLocation')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowHttpsOutbound",
+            "properties": {
+              "priority": 100,
+              "direction": "Outbound",
+              "access": "Allow",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "Internet"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2024-05-01",
+      "name": "[variables('primaryVnetName')]",
+      "location": "[parameters('primaryLocation')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('primaryVnetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('delegatedSubnetName')]",
+            "properties": {
+              "addressPrefix": "[parameters('primarySubnetPrefix')]",
+              "delegations": [
+                "[variables('powerPlatformDelegation')]"
+              ],
+              "natGateway": {
+                "id": "[resourceId('Microsoft.Network/natGateways', variables('primaryNatName'))]"
+              },
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('primaryNsgName'))]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/natGateways', variables('primaryNatName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('primaryNsgName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2024-05-01",
+      "name": "[variables('secondaryVnetName')]",
+      "location": "[parameters('secondaryLocation')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('secondaryVnetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('delegatedSubnetName')]",
+            "properties": {
+              "addressPrefix": "[parameters('secondarySubnetPrefix')]",
+              "delegations": [
+                "[variables('powerPlatformDelegation')]"
+              ],
+              "natGateway": {
+                "id": "[resourceId('Microsoft.Network/natGateways', variables('secondaryNatName'))]"
+              },
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('secondaryNsgName'))]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/natGateways', variables('secondaryNatName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('secondaryNsgName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2024-05-01",
+      "name": "[format('{0}/{1}', variables('primaryVnetName'), format('to-{0}', variables('secondaryVnetName')))]",
+      "properties": {
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false,
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('secondaryVnetName'))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('primaryVnetName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('secondaryVnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2024-05-01",
+      "name": "[format('{0}/{1}', variables('secondaryVnetName'), format('to-{0}', variables('primaryVnetName')))]",
+      "properties": {
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false,
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('primaryVnetName'))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('primaryVnetName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('secondaryVnetName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "primaryVnetId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks', variables('primaryVnetName'))]"
+    },
+    "secondaryVnetId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks', variables('secondaryVnetName'))]"
+    },
+    "delegatedSubnetName": {
+      "type": "string",
+      "value": "[parameters('delegatedSubnetName')]"
+    },
+    "primaryNatGatewayId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/natGateways', variables('primaryNatName'))]"
+    },
+    "secondaryNatGatewayId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/natGateways', variables('secondaryNatName'))]"
+    },
+    "primaryNatPublicIp": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('primaryPipName')), '2024-05-01').ipAddress]"
+    },
+    "secondaryNatPublicIp": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('secondaryPipName')), '2024-05-01').ipAddress]"
+    }
+  }
+}

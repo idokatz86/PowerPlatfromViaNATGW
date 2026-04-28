@@ -1,0 +1,5 @@
+.azure/*.json
+!.azure/deployment-plan.md
+.azure/*.log
+.azure/*.txt
+.DS_Store
