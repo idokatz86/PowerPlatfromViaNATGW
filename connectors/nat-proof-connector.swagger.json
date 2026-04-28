@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "Power Platform NAT Proof Inspector",
+    "title": "NAT Proof Inspector",
     "description": "Calls the external inspection endpoint and returns the source IP observed by the destination.",
     "version": "1.0.0"
   },
