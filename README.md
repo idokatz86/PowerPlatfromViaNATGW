@@ -230,6 +230,14 @@ export WEST_REGION_CONNECTOR_DISPLAY_NAME='West Region NAT Proxy'
 
 The script writes generated connector definitions under `.azure/generated-connectors`, which is ignored by Git.
 
+#### Why The Custom Connector Forces The Proxy Path
+
+The proxy custom connector is intentionally not a generic HTTP connector. Its OpenAPI definition pins the backend `host` to the regional Container Apps proxy and exposes only fixed proxy operations, such as `/proxy/all`, `/proxy/ipify`, and `/proxy/aws-checkip`.
+
+The connector does not expose a maker-controlled `url`, `host`, `endpoint`, or `destination` parameter. This prevents makers from using the connector as an arbitrary forwarding client. Any flow that uses this connector calls the proxy first, and the proxy performs the outbound request from the VNet subnet associated with NAT Gateway or Azure Firewall.
+
+This only governs flows that use the approved connector. DLP and environment governance are still required to prevent makers from bypassing the connector with built-in HTTP or unapproved connectors.
+
 ### 8. Deploy Logic Apps Examples
 
 For Logic Apps Consumption examples that call only approved proxies:
